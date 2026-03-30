@@ -1,0 +1,3 @@
+.installed-manifest.json
+*.backup.*
+.DS_Store

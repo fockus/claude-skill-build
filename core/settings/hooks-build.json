@@ -1,0 +1,36 @@
+{
+  "PostToolUse": [
+    {
+      "matcher": "Write(.*\\.go)",
+      "hooks": [{ "type": "command", "command": "~/.claude/hooks/go-quality.sh # [build-skill]" }]
+    },
+    {
+      "matcher": "Edit(.*\\.go)",
+      "hooks": [{ "type": "command", "command": "~/.claude/hooks/go-quality.sh # [build-skill]" }]
+    },
+    {
+      "matcher": "Write(.*\\.py)",
+      "hooks": [{ "type": "command", "command": "~/.claude/hooks/py-quality.sh # [build-skill]" }]
+    },
+    {
+      "matcher": "Edit(.*\\.py)",
+      "hooks": [{ "type": "command", "command": "~/.claude/hooks/py-quality.sh # [build-skill]" }]
+    },
+    {
+      "matcher": "Bash",
+      "hooks": [{ "type": "command", "command": "jq -r '.tool_input.command // empty' | while read -r cmd; do [ -n \"$cmd\" ] && { LOG=~/.claude/bash-audit.log; [ -f \"$LOG\" ] && [ $(wc -c < \"$LOG\") -gt 10485760 ] && mv \"$LOG\" \"$LOG.old\"; echo \"[$(date +%Y-%m-%d\\ %H:%M:%S)] $cmd\" >> \"$LOG\"; }; done; true # [build-skill]" }]
+    },
+    {
+      "matcher": "Write|Edit",
+      "hooks": [{ "type": "command", "command": "HOOK_JSON=$(cat); CLAUDE_TOOL_NAME=$(echo \"$HOOK_JSON\" | jq -r '.tool_name // empty') CLAUDE_FILE_PATH=$(echo \"$HOOK_JSON\" | jq -r '.tool_input.file_path // empty') ~/.claude/hooks/quality-gate.sh # [build-skill]", "timeout": 10 }]
+    },
+    {
+      "matcher": "Bash",
+      "hooks": [{ "type": "command", "command": "HOOK_JSON=$(cat); CLAUDE_TOOL_NAME=Bash CLAUDE_COMMAND=$(echo \"$HOOK_JSON\" | jq -r '.tool_input.command // empty') ~/.claude/hooks/quality-gate.sh # [build-skill]", "timeout": 10 }]
+    },
+    {
+      "matcher": "Bash",
+      "hooks": [{ "type": "command", "command": "HOOK_JSON=$(cat); CLAUDE_TOOL_NAME=Bash CLAUDE_COMMAND=$(echo \"$HOOK_JSON\" | jq -r '.tool_input.command // empty') ~/.claude/hooks/judge-findings-gate.sh # [build-skill]", "timeout": 10 }]
+    }
+  ]
+}

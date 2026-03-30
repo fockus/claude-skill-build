@@ -1,0 +1,48 @@
+project:
+  name: my-project
+  language: python  # python | typescript | go | rust
+
+commands:
+  test: "pytest -q"
+  lint: "ruff check ."
+  typecheck: "mypy src"
+  # format_check: "black --check ."  # optional
+
+context:
+  loader: memory-bank
+  plan_file: .memory-bank/plan.md
+  checklist_file: .memory-bank/checklist.md
+  lessons_file: .memory-bank/lessons.md
+
+team:
+  dev_layers:
+    - domain
+    - infra
+
+architecture_rules:
+  - "Clean Architecture: domain НЕ импортирует infrastructure"
+  - "TDD: тесты ПЕРЕД реализацией"
+
+boundary_checks:
+  - 'grep -r "from myproject.infrastructure" src/myproject/domain/ 2>/dev/null | head -5'
+
+placeholder_patterns:
+  - 'grep -rn "TODO\\|FIXME\\|HACK" src/ 2>/dev/null | head -10'
+
+judge:
+  standard_threshold: 4.0
+  critical_threshold: 4.5
+  panel_size: 1
+
+model_tiering:
+  developer: opus
+  tester: opus
+  architect: opus
+  reviewer: opus
+  judge: opus
+  reflexion: opus
+
+quality_hooks:
+  ai_residuals: true
+  test_tampering: true
+  judge_findings_gate: true
