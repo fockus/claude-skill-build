@@ -1,0 +1,28 @@
+# Calibration: Known-Good Samples
+# Phases that received high Judge scores — reviewer should NOT flag serious issues here
+# Used for manual iterative calibration (D-07): run reviewer on these, verify low finding count
+
+samples:
+  - id: phase_2_rich_model
+    source: "Code Factory v2 Phase 2: Rich Model & SOLID"
+    judge_score: 4.65
+    characteristics:
+      - "Domain events as typed frozen dataclasses with correlation IDs"
+      - "Sprint/Goal/Epic aggregates with behavior methods (activate/complete/fail/pause)"
+      - "Pipeline step registry (OCP) replacing hardcoded STEPS"
+      - "PipelineConfig builder pattern"
+      - "DRY: shared repo base class"
+    expected_reviewer_outcome: "APPROVED or NEEDS_CHANGES with WARNING-only findings"
+    expected_finding_count: "0 CRITICAL, 0 SERIOUS, 0-3 WARNING"
+
+  - id: phase_6_multi_runtime
+    source: "Code Factory v2 Phase 6: Multi-Runtime"
+    judge_score: 4.88
+    characteristics:
+      - "RuntimeRoleConfig frozen dataclass with validation"
+      - "FallbackResolver with chain traversal"
+      - "EnvHealthChecker checking API key env vars"
+      - "Session ID persistence across daemon restarts"
+      - "Pipeline health gate blocking sprint on unhealthy runtime"
+    expected_reviewer_outcome: "APPROVED"
+    expected_finding_count: "0 CRITICAL, 0 SERIOUS, 0-2 WARNING"

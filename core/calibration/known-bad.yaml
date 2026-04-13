@@ -1,0 +1,48 @@
+# Calibration: Known-Bad Samples
+# Phases where iteration-1 had significant findings — reviewer MUST flag these patterns
+# Used for manual iterative calibration (D-07): run reviewer, verify findings detected
+
+samples:
+  - id: phase_4_iteration_1
+    source: "Code Factory v2 Phase 4: Core Wiring (iteration 1)"
+    judge_score_iteration_1: 3.8
+    known_issues:
+      - severity: SERIOUS
+        pattern: "Stub implementations with NotImplementedError in production paths"
+        detection_hint: "grep NotImplementedError in non-test files"
+      - severity: SERIOUS
+        pattern: "Missing error handling in async subprocess calls"
+        detection_hint: "async subprocess without timeout or except"
+      - severity: WARNING
+        pattern: "Inconsistent naming between Protocol methods and implementations"
+        detection_hint: "compare Protocol def signatures vs Impl def signatures"
+    expected_reviewer_outcome: "NEEDS_CHANGES"
+    expected_finding_count: ">= 2 SERIOUS"
+
+  - id: phase_8_iteration_1
+    source: "Code Factory v2 Phase 8: Agent Quality (iteration 1)"
+    judge_score_iteration_1: 3.5
+    known_issues:
+      - severity: SERIOUS
+        pattern: "ReviewPipeline evaluate() missing stage parameter propagation"
+        detection_hint: "stage parameter defined but not passed through call chain"
+      - severity: SERIOUS
+        pattern: "ActiveEvaluator Protocol has no timeout contract"
+        detection_hint: "evaluate() has no timeout parameter or documentation"
+      - severity: SERIOUS
+        pattern: "ResponseAnalyzer stuck detection threshold hardcoded (not configurable)"
+        detection_hint: "magic numbers in stuck detection logic"
+      - severity: SERIOUS
+        pattern: "Fallback chain skips L1 when L0 is partially available"
+        detection_hint: "fallback logic does not check partial availability"
+    expected_reviewer_outcome: "NEEDS_CHANGES"
+    expected_finding_count: ">= 3 SERIOUS"
+
+calibration_notes: |
+  Manual calibration process (D-06, D-07):
+  1. Run reviewer agent on known-good samples -> verify finding severity matches expected
+  2. Run reviewer agent on known-bad samples -> verify known_issues are detected
+  3. If known-good generates too many SERIOUS findings -> reviewer is too strict, relax thresholds
+  4. If known-bad misses known_issues -> reviewer is too lenient, add detection hints to prompt
+  5. Adjust rubric weights in judge.md based on score correlation
+  6. Repeat until calibrated (human reviews each iteration)

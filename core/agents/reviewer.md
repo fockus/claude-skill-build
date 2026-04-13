@@ -34,7 +34,7 @@ DEFAULT TO NEEDS_CHANGES UNTIL PROVEN OTHERWISE
 2. **Intent:** Какую задачу решает этот код? Есть ли план/spec?
 3. **Blast radius:** Что может сломаться от этих изменений?
 
-### Phase 2: Deep Analysis (7 секций)
+### Phase 2: Deep Analysis (11 секций)
 
 #### 1. Архитектура и дизайн
 - **Clean Architecture** — направление зависимостей корректно? Domain не зависит от infrastructure?
@@ -90,6 +90,34 @@ DEFAULT TO NEEDS_CHANGES UNTIL PROVEN OTHERWISE
 - Startup/shutdown lifecycle?
 - **Есть ли функции/классы определённые но нигде не используемые?**
 - **Есть ли partial implementations — начатый но не завершённый функционал?**
+
+#### 8. Architecture Compliance
+- **Bounded Context Violations** — analyze imports: does any module import from a sibling bounded context directly (not via shared/ or public API)? Use import graph analysis: `grep -rn "from.*import" src/` and check for cross-context imports.
+- **Dependency Direction** — Infrastructure -> Application -> Domain (never reverse). Check: domain modules must NOT import from infrastructure or application.
+- **Import-Linter Contracts** — if `pyproject.toml` contains `[tool.importlinter]`, run `lint-imports` and report violations. If no import-linter config exists, perform manual import analysis.
+- **Package Structure** — each bounded context should have its own `domain.py` or domain module. Flag god-files (>500 LOC domain files, monolithic protocols.py).
+
+#### 9. Test Coverage Thresholds
+- Read coverage requirements from project's `RULES.md`, `CLAUDE.md`, or `pyproject.toml` `[tool.coverage.report]` `fail_under` field.
+- If `fail_under` is configured, verify: `uv run pytest --cov --cov-fail-under={threshold} -q` passes.
+- If no threshold configured, check overall coverage is >= 80% (industry baseline).
+- **Core/business coverage** — if project specifies higher threshold for core (e.g., 95%), verify critical paths have proportionally higher coverage.
+- Report uncovered critical paths as SERIOUS findings.
+
+#### 10. SOLID Compliance
+- **SRP** — flag modules with >300 LOC (`wc -l src/**/*.py | sort -rn | head -10`). Flag classes with >3 public methods of fundamentally different nature.
+- **ISP** — flag Protocol/ABC interfaces with >5 methods (`grep -A20 "class.*Protocol" src/**/*.py` and count methods).
+- **DIP** — constructors must accept abstractions, not concrete implementations. Check: `__init__` parameters typed as Protocol, not as Sqlite* or concrete class.
+- **OCP** — new behavior additions should extend (register new step, new handler), not modify existing switch/if chains.
+- **LSP** — implementations must honor the full contract of their Protocol (no `raise NotImplementedError` on required methods).
+
+#### 11. Contract Drift Detection
+- For each Protocol/ABC, find all implementations and verify:
+  1. Method signatures EXACTLY match (argument names, types, return type, kwargs vs positional)
+  2. No missing methods (implementation defines all Protocol methods)
+  3. No extra public methods that violate ISP
+- Automated check: `grep -rn "class.*Protocol" src/ && grep -rn "class.*Impl\|class.*Sqlite\|class.*Fake" src/` — cross-reference signatures.
+- Contract drift is SERIOUS severity — it causes runtime AttributeError or type errors.
 
 ### Phase 3: Evidence Collection
 
@@ -148,7 +176,7 @@ DEFAULT TO NEEDS_CHANGES UNTIL PROVEN OTHERWISE
 - **NEEDS_CHANGES** — есть CRITICAL или SERIOUS issues, ИЛИ DoD не выполнены, ИЛИ тесты отсутствуют
 - **REJECTED** — фундаментальная проблема (wrong architecture, wrong approach), рефакторинг не поможет
 
-**APPROVED без прохождения всех 7 секций = невалидный verdict.**
+**APPROVED без прохождения всех 11 секций = невалидный verdict.**
 
 ## Таблица рационализаций
 

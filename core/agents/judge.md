@@ -92,6 +92,29 @@ Score 5.0 = редкость (идеальный код). Score 2.0 = значи
 | 4/5 | Параметризованные запросы, validation, no secrets exposure |
 | 5/5 | Defence in depth, все OWASP checks, audit trail |
 
+## Calibration Weights
+
+Weights derived from manual iterative calibration against known-good/known-bad samples
+(see `core/calibration/known-good.yaml` and `core/calibration/known-bad.yaml`).
+
+| Criterion | Weight | Rationale |
+|-----------|--------|-----------|
+| Correctness | 0.30 | Highest — broken logic is the #1 production risk |
+| Architecture | 0.25 | Strong — architecture debt compounds across phases |
+| Test Quality | 0.20 | Testing Trophy compliance prevents regression |
+| Code Quality | 0.15 | Clean code matters but less than correctness |
+| Security/Compliance | 0.10 | Important but lower weight for internal tools |
+
+**Weighted average formula:**
+```
+weighted_average = (correctness * 0.30) + (architecture * 0.25) + (test_quality * 0.20) + (code_quality * 0.15) + (security * 0.10)
+```
+
+**Calibration reference:**
+- Known-good (Phase 2: 4.65, Phase 6: 4.88) should produce weighted_average >= 4.5
+- Known-bad (Phase 4 iter-1: 3.8, Phase 8 iter-1: 3.5) should produce weighted_average < 4.0
+- See `core/calibration/` for sample data and tuning instructions
+
 ## Output Format
 
 **ОБЯЗАТЕЛЬНО** завершить ответ этим JSON:
@@ -101,6 +124,13 @@ Score 5.0 = редкость (идеальный код). Score 2.0 = значи
   "scores": {
     "criterion_1": 4.0,
     "criterion_2": 4.5
+  },
+  "weights": {
+    "correctness": 0.30,
+    "architecture": 0.25,
+    "test_quality": 0.20,
+    "code_quality": 0.15,
+    "security": 0.10
   },
   "weighted_average": 4.2,
   "verdict": "PASS",

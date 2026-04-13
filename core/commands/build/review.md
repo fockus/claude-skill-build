@@ -1,7 +1,7 @@
 ---
 name: build:review
 description: "Multi-agent code review — LITE (1 reviewer), STANDARD (3 focused), FULL (6 specialized + architect). Accepts review scope as argument."
-argument-hint: "<what to review> [--lite|--standard|--full]"
+argument-hint: "<what to review> [--lite|--standard|--full] [--active]"
 allowed-tools:
   - Read
   - Write
@@ -25,6 +25,7 @@ Multi-agent review с 3 tier'ами. Каждый tier запускает спе
 Из `$ARGUMENTS` извлеки:
 - **Prompt** — всё что не флаг = описание scope ревью (файлы, модули, фичи, git range)
 - **Tier flag** — `--lite`, `--standard`, `--full`. Если нет → `--standard` (default)
+- **Active flag** — `--active`. If present, run browser-based assertion checks after code review. Requires Playwright MCP. Skipped gracefully if unavailable.
 
 **Примеры:**
 ```
@@ -309,7 +310,39 @@ OUTPUT:
 # Filename: YYYY-MM-DD_review_{tier}_{short_scope}.md
 ```
 
-## 7. Output
+## 7. Active Testing (if --active)
+
+**Only runs when `--active` flag is present.** Skipped otherwise.
+
+1. Run the active-test hook to check Playwright MCP availability and load assertions:
+```bash
+bash "$(dirname "$0")/../../hooks/active-test.sh" 2>&1
+```
+
+If the hook outputs `[SKIP]` — report "Active testing skipped: {reason}" and continue.
+
+2. If assertions are loaded, use Playwright MCP tools to verify:
+   - `browser_navigate` to target URL from assertions config
+   - `browser_snapshot` to capture page content
+   - Check each assertion against snapshot text
+
+3. Append active test results to the review report:
+```
+### Active Testing Results
+- URL: {url}
+- Assertions: {pass_count}/{total_count} passed
+- Details: {per-assertion PASS/FAIL}
+```
+
+If active testing fails (assertions not met), add to findings:
+```
+### SERIOUS (active test failures)
+N. **[Active Test]** Assertion "{assertion}" failed against {url}
+   - Impact: UI/functional regression detected
+   - Fix: Verify the assertion text is present/visible on the page
+```
+
+## 8. Output
 
 Выведи: tier, количество reviewers, aggregated verdict, findings по severity, fix plan.
 
