@@ -236,21 +236,28 @@ with open(p,'w') as f: json.dump(s,f,indent=2,ensure_ascii=False)
 
 # ═══ Step 6.5: Optional NeoLabHQ context-engineering-kit ═══
 echo -e "${BLUE}[6.5/8] NeoLabHQ context-engineering-kit (optional)${NC}"
-echo "  We vendor a subset of NeoLabHQ kit (sdd/reflexion/kaizen/sadd — 25 skills)."
-echo "  The full kit adds: ddd, fpf, git, mcp, review, tdd, tech-stack."
+echo "  Pre-installed (vendored): 25 skills from kit (sdd/reflexion/kaizen/sadd)"
+echo "  Full kit adds 38 more: ddd, fpf, git, mcp, review, tdd, tech-stack plugins"
+echo "  If installed, our patches.sh re-applies build conventions on top of upstream."
 if command -v npx &>/dev/null; then
   if [ "$AUTO" = true ]; then
-    DO_KIT=false
+    DO_KIT=${DO_KIT:-false}  # set DO_KIT=true via env to enable in --auto
   else
     read -rp "  Install full kit via 'npx skills add NeoLabHQ/context-engineering-kit'? (y/n): " kit_ans
     DO_KIT=false; [[ "$kit_ans" =~ ^[Yy] ]] && DO_KIT=true
   fi
   if [ "$DO_KIT" = true ]; then
-    npx -y skills add NeoLabHQ/context-engineering-kit 2>&1 | tail -5 \
-      && echo -e "  ${GREEN}✓${NC} Kit installed" \
-      || echo -e "  ${YELLOW}~${NC} Kit install failed. Manual: npx skills add NeoLabHQ/context-engineering-kit"
+    echo "  Installing kit to all detected agents (this may take ~30s)..."
+    npx -y skills add NeoLabHQ/context-engineering-kit -y -g --agent '*' 2>&1 | tail -3
+    echo -e "  ${GREEN}✓${NC} Kit installed"
+    echo "  Applying patches.sh on each agent's skills/ directory..."
+    for base in "$CLAUDE_DIR/skills" "$CODEX_DIR/skills" "$OPENCODE_DIR/skills" "$CURSOR_DIR/skills"; do
+      [ -d "$base" ] || continue
+      bash "$SKILL_DIR/scripts/patches.sh" "$base" 2>&1 | grep -E "(found|✓|done)" | sed 's/^/    /'
+    done
+    echo -e "  ${GREEN}✓${NC} Patches applied to kit-installed skills"
   else
-    echo -e "  ${YELLOW}~${NC} Skipped. Run later: npx skills add NeoLabHQ/context-engineering-kit"
+    echo -e "  ${YELLOW}~${NC} Skipped. Run later: npx skills add NeoLabHQ/context-engineering-kit -g -y --agent '*'"
   fi
 else
   echo -e "  ${YELLOW}~${NC} npx not found — install Node.js to use the kit"
@@ -276,17 +283,16 @@ else
   fi
 fi
 
-# ═══ Step 7.5: CLAUDE.md conventions ═══
-echo -e "${BLUE}[7.5/8] Inject build conventions into ~/.claude/CLAUDE.md${NC}"
-CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
-[ -f "$CLAUDE_MD" ] || touch "$CLAUDE_MD"
-CLAUDE_MD_PATH="$CLAUDE_MD" python3 << 'PYEOF' && echo -e "  ${GREEN}✓${NC} Build conventions injected" || echo -e "  ${YELLOW}~${NC} CLAUDE.md update skipped"
-import os, re
-
-p = os.environ["CLAUDE_MD_PATH"]
+# ═══ Step 7.5: Inject build conventions into CLAUDE.md and RULES.md ═══
+echo -e "${BLUE}[7.5/8] Inject [SKILL-BUILD-MANAGED] block into global rules${NC}"
+inject_managed_block() {
+  local target="$1"
+  [ -f "$target" ] || touch "$target"
+  TARGET_PATH="$target" python3 << 'PYEOF' && echo -e "  ${GREEN}✓${NC} $(basename "$target") updated" || echo -e "  ${YELLOW}~${NC} $(basename "$target") skipped"
+import os
+p = os.environ["TARGET_PATH"]
 content = open(p).read()
 marker = "# [SKILL-BUILD-MANAGED]"
-
 block = """# [SKILL-BUILD-MANAGED]
 
 ## claude-skill-build conventions
@@ -300,23 +306,22 @@ Subdirectories under `.memory-bank/specs/`:
 - `scratchpad/` — temporary working files (gitignored)
 - `analysis/`, `reports/`, `research/` — analysis outputs
 
-This consolidates all project artifacts under Memory Bank as the single source of truth.
+This consolidates all project artifacts under Memory Bank as the single source of truth. The Memory Bank skill should treat `.memory-bank/specs/` as a managed subdirectory, alongside `plans/`, `experiments/`, `reports/`, `notes/`, `codebase/`.
 
 **Legacy migration:** if you have an existing `.specs/` directory, run `mv .specs .memory-bank/specs` or symlink: `ln -s .memory-bank/specs .specs`.
 """
-
-# Remove any existing managed block (everything from marker to end-of-file or next ^# section)
 if marker in content:
-    idx = content.index(marker)
-    content = content[:idx].rstrip() + "\n"
-
-# Append fresh block
+    content = content[:content.index(marker)].rstrip() + "\n"
 if content and not content.endswith("\n"):
     content += "\n"
 content += "\n" + block
-
 open(p, "w").write(content)
 PYEOF
+}
+
+inject_managed_block "$CLAUDE_DIR/CLAUDE.md"
+[ -f "$CLAUDE_DIR/RULES.md" ] && inject_managed_block "$CLAUDE_DIR/RULES.md" \
+  || echo -e "  ${YELLOW}~${NC} ~/.claude/RULES.md not present (memory-bank not installed?) — skipping"
 
 # ═══ Step 8: Manifest ═══
 echo -e "${BLUE}[8/8] Manifest${NC}"

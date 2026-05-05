@@ -1,46 +1,39 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════
-# scripts/patches.sh — Applies our customizations on top of upstream
-# NeoLabHQ/context-engineering-kit skills after they're synced.
+# scripts/patches.sh — Apply our customizations to NeoLabHQ skills
+# wherever they live. Supports two layouts:
 #
-# Patches are deterministic sed substitutions. If a substitution
-# matches zero lines, we warn (means upstream changed wording or
-# patch already applied).
+#   1. Vendored layout: <base>/sdd-brainstorm/SKILL.md
+#      (used by our repo's skills/ + install destinations)
 #
-# Usage:  scripts/patches.sh [<skills-dir>]
-#         default: skills/
+#   2. Kit layout: <base>/brainstorm/SKILL.md
+#      (used by `npx skills add NeoLabHQ/context-engineering-kit`)
+#
+# Patches applied per file:
+#   - name: <bare> → name: <plugin>:<skill>
+#   - .specs/ → .memory-bank/specs/
+#   - cross-skill refs (sdd-brainstorm: 3, sdd-plan: 2)
+#
+# Idempotent: if a substitution finds nothing to change, warns but
+# doesn't fail (means already patched or upstream wording changed).
+#
+# Usage: scripts/patches.sh [<skills-base-dir>]
+#        default: skills/  (our repo's vendored copies)
 # ═══════════════════════════════════════════════════════════════
 set -euo pipefail
 
 SKILLS_DIR="${1:-skills}"
-RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'; NC='\033[0m'
+RED='\033[0;31m'; YELLOW='\033[1;33m'; GREEN='\033[0;32m'; BLUE='\033[0;34m'; NC='\033[0m'
 
-# Apply sed expression to file. Warn if pattern didn't match anything.
-# Args: <file> <sed-expr> <human-readable-label>
-patch_file() {
-  local file="$1" expr="$2" label="$3"
-  if [ ! -f "$file" ]; then
-    echo -e "  ${RED}✗${NC} $label: file missing — $file"
-    return 1
-  fi
-  # Compute hash before/after to detect actual change
-  local before after
-  before=$(shasum "$file" | awk '{print $1}')
-  sed -i.bak -E "$expr" "$file" && rm "$file.bak"
-  after=$(shasum "$file" | awk '{print $1}')
-  if [ "$before" = "$after" ]; then
-    echo -e "  ${YELLOW}~${NC} $label: no-op (already applied or upstream changed)"
-  else
-    echo -e "  ${GREEN}✓${NC} $label"
-  fi
-}
+if [ ! -d "$SKILLS_DIR" ]; then
+  echo -e "${RED}✗${NC} skills dir not found: $SKILLS_DIR"
+  exit 1
+fi
 
-# Maps our skill dir → upstream bare name (used in `name:` frontmatter).
-# Also serves as the canonical list of NeoLabHQ-derived skills.
-echo "═══ Pattern 1: name namespacing (25 skills) ═══"
-
-# Format: <our-dir>:<bare-upstream-name>:<our-namespaced-name>
-NAMESPACE_MAP="
+# Format: <vendored-dir>:<kit-bare-dir>:<our-namespace>:<our-skill-name>
+# vendored-dir = our prefixed name, what we ship pre-patched in skills/
+# kit-bare-dir = name as installed by `npx skills add NeoLabHQ/...`
+SKILLS_TABLE="
 sdd-add-task:add-task:sdd:add-task
 sdd-brainstorm:brainstorm:sdd:brainstorm
 sdd-create-ideas:create-ideas:sdd:create-ideas
@@ -68,46 +61,93 @@ sadd-subagent-driven-development:subagent-driven-development:sadd:subagent-drive
 sadd-tree-of-thoughts:tree-of-thoughts:sadd:tree-of-thoughts
 "
 
-while IFS=: read -r dir bare ns_prefix ns_name; do
-  [ -z "$dir" ] && continue
+# Apply sed expression to file. Hash before/after to detect actual change.
+patch_file() {
+  local file="$1" expr="$2"
+  [ -f "$file" ] || return 0
+  local before after
+  before=$(shasum "$file" | awk '{print $1}')
+  sed -i.bak -E "$expr" "$file" && rm -f "$file.bak"
+  after=$(shasum "$file" | awk '{print $1}')
+  [ "$before" != "$after" ]  # return 0 if changed, 1 if no-op
+}
+
+# Resolve actual skill dirs for an entry. Returns 0..2 paths separated by newline.
+# Both layouts may coexist (vendored + kit) — patch both.
+resolve_skill_dirs() {
+  local vendored="$1" kit="$2"
+  [ -d "$SKILLS_DIR/$vendored" ] && echo "$SKILLS_DIR/$vendored"
+  [ -d "$SKILLS_DIR/$kit" ] && [ "$vendored" != "$kit" ] && echo "$SKILLS_DIR/$kit"
+  return 0  # never propagate test failures (we only care about emitted paths)
+}
+
+echo -e "${BLUE}═══ patches.sh on $SKILLS_DIR ═══${NC}"
+
+found=0; patched=0; skipped=0
+while IFS=: read -r vendored bare ns_prefix ns_name; do
+  [ -z "$vendored" ] && continue
+
+  dirs=$(resolve_skill_dirs "$vendored" "$bare")
+  if [ -z "$dirs" ]; then
+    skipped=$((skipped + 1))
+    continue
+  fi
   full_ns="${ns_prefix}:${ns_name}"
-  file="$SKILLS_DIR/$dir/SKILL.md"
-  patch_file "$file" "s|^name: ${bare}\$|name: ${full_ns}|" "$dir → name: $full_ns"
-done < <(echo "$NAMESPACE_MAP" | grep -v '^$')
 
-echo ""
-echo "═══ Pattern 2: .specs/ → .memory-bank/specs/ (all SDD/SADD files) ═══"
+  IFS=$'\n'
+  for dir in $dirs; do
+    [ -z "$dir" ] && continue
+    found=$((found + 1))
+    skill_file="$dir/SKILL.md"
 
-# Replace artifact directory across all 25 files (143 references upstream)
-for dir_entry in "$SKILLS_DIR"/sdd-* "$SKILLS_DIR"/sadd-*; do
-  [ -d "$dir_entry" ] || continue
-  for f in "$dir_entry"/*.md; do
-    [ -f "$f" ] || continue
-    patch_file "$f" 's|\.specs/|.memory-bank/specs/|g' "$(basename "$dir_entry")/$(basename "$f"): .specs/ → .memory-bank/specs/"
+    # Pattern 1: name namespacing — applies to any layout
+    if patch_file "$skill_file" "s|^name: ${bare}\$|name: ${full_ns}|"; then
+      patched=$((patched + 1))
+    fi
+
+    # Pattern 2: .specs/ → .memory-bank/specs/ — applies to all .md files in skill dir
+    for f in "$dir"/*.md; do
+      [ -f "$f" ] || continue
+      patch_file "$f" 's|\.specs/|.memory-bank/specs/|g' || true
+    done
   done
+  unset IFS
+done < <(echo "$SKILLS_TABLE" | grep -v '^$')
+
+echo "  $found skill dirs patched, $patched name-renamed, $skipped not present"
+
+# Pattern 3: cross-skill reference rewrites (skill-specific)
+echo ""
+echo "  Cross-skill refs:"
+
+# sdd-brainstorm — apply to all detected layouts
+brainstorm_dirs="$(resolve_skill_dirs "sdd-brainstorm" "brainstorm")"
+IFS=$'\n'
+for dir in $brainstorm_dirs; do
+  [ -z "$dir" ] && continue
+  f="$dir/SKILL.md"
+  patch_file "$f" 's|Use write-concisely skill if available|Use docs:write-concisely skill if available|' \
+    && echo -e "    ${GREEN}✓${NC} $(basename "$dir"): write-concisely → docs:write-concisely" || true
+  patch_file "$f" 's|/worktrees create|git:create-worktree|' \
+    && echo -e "    ${GREEN}✓${NC} $(basename "$dir"): /worktrees create → git:create-worktree" || true
+  patch_file "$f" 's|`/add-task`|sdd:add-task|' \
+    && echo -e "    ${GREEN}✓${NC} $(basename "$dir"): /add-task → sdd:add-task" || true
 done
+unset IFS
+
+# sdd-plan — apply to all detected layouts
+plan_dirs="$(resolve_skill_dirs "sdd-plan" "plan-task")"
+IFS=$'\n'
+for dir in $plan_dirs; do
+  [ -z "$dir" ] && continue
+  f="$dir/SKILL.md"
+  patch_file "$f" 's|skills/plan-task/analyse-business-requirements\.md|skills/plan/analyse-business-requirements.md|' \
+    && echo -e "    ${GREEN}✓${NC} $(basename "$dir"): plan-task → plan path" || true
+  # Idempotent: mask already-patched, replace, restore (BSD sed has no lookbehind)
+  patch_file "$f" 's|code-review:bug-hunter|__BUG_HUNTER_KEEP__|g; s|review:bug-hunter|code-review:bug-hunter|g; s|__BUG_HUNTER_KEEP__|code-review:bug-hunter|g' \
+    && echo -e "    ${GREEN}✓${NC} $(basename "$dir"): review:bug-hunter → code-review:bug-hunter" || true
+done
+unset IFS
 
 echo ""
-echo "═══ Pattern 3: cross-skill reference rewrites ═══"
-
-# sdd-brainstorm: skill cross-refs
-patch_file "$SKILLS_DIR/sdd-brainstorm/SKILL.md" \
-  's|Use write-concisely skill if available|Use docs:write-concisely skill if available|' \
-  "sdd-brainstorm: write-concisely → docs:write-concisely"
-patch_file "$SKILLS_DIR/sdd-brainstorm/SKILL.md" \
-  's|/worktrees create|git:create-worktree|' \
-  "sdd-brainstorm: /worktrees create → git:create-worktree"
-patch_file "$SKILLS_DIR/sdd-brainstorm/SKILL.md" \
-  's|`/add-task`|sdd:add-task|' \
-  "sdd-brainstorm: /add-task → sdd:add-task"
-
-# sdd-plan: paths and agent name refs
-patch_file "$SKILLS_DIR/sdd-plan/SKILL.md" \
-  's|skills/plan-task/analyse-business-requirements\.md|skills/plan/analyse-business-requirements.md|' \
-  "sdd-plan: plan-task path → plan path"
-patch_file "$SKILLS_DIR/sdd-plan/SKILL.md" \
-  's|review:bug-hunter|code-review:bug-hunter|g' \
-  "sdd-plan: review:bug-hunter → code-review:bug-hunter"
-
-echo ""
-echo -e "${GREEN}═══ All patches applied ═══${NC}"
+echo -e "${GREEN}═══ patches.sh done ═══${NC}"

@@ -137,20 +137,23 @@ print(f"  Removed {removed} hook entries")
 PYEOF
 fi
 
-# Remove [SKILL-BUILD-MANAGED] section from CLAUDE.md
-if [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
-  if grep -q "\[SKILL-BUILD-MANAGED\]" "$CLAUDE_DIR/CLAUDE.md"; then
-    CLAUDE_MD_PATH="$CLAUDE_DIR/CLAUDE.md" python3 << 'PYEOF' 2>/dev/null
+# Remove [SKILL-BUILD-MANAGED] section from CLAUDE.md and RULES.md
+remove_managed_block() {
+  local target="$1"
+  if [ -f "$target" ] && grep -q "\[SKILL-BUILD-MANAGED\]" "$target"; then
+    TARGET_PATH="$target" python3 << 'PYEOF' 2>/dev/null
 import os
-p = os.environ["CLAUDE_MD_PATH"]
+p = os.environ["TARGET_PATH"]
 content = open(p).read()
 marker = '# [SKILL-BUILD-MANAGED]'
 if marker in content:
     open(p, 'w').write(content[:content.index(marker)].rstrip() + '\n')
-    print('  Cleaned CLAUDE.md')
+    print(f"  Cleaned {p}")
 PYEOF
   fi
-fi
+}
+remove_managed_block "$CLAUDE_DIR/CLAUDE.md"
+remove_managed_block "$CLAUDE_DIR/RULES.md"
 echo ""
 
 # ═══ Step 4: Cleanup ═══
