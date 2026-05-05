@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════
 # claude-skill-build — Installer
-# Build pipeline + 18 agents + 7 hooks + 33 bundled skills
+# Build pipeline + 18 agents + 9 hooks + 33 bundled skills
 # Requires: skill-memory-bank (external)
 # Optional: claude-skill-find-skill (external)
 # ═══════════════════════════════════════════════════════════════
@@ -93,6 +93,21 @@ if [ ${#SECONDARY_TARGETS[@]} -eq 0 ]; then
 fi
 echo ""
 
+# ═══ Step 0.6: One-time migration — clean stale timestamped backups from older installs ═══
+# Pre-1.0.1 installs created *.pre-build-backup.<unix-ts>. New scheme uses fixed suffix.
+# Counts only — does not block install if cleanup fails.
+STALE_BACKUPS=0
+for base in "$CLAUDE_DIR" "$CODEX_DIR" "$OPENCODE_DIR" "$CURSOR_DIR"; do
+  [ -d "$base" ] || continue
+  while IFS= read -r f; do
+    rm -f "$f" && STALE_BACKUPS=$((STALE_BACKUPS + 1))
+  done < <(find "$base" -type f -name '*.pre-build-backup.[0-9]*' 2>/dev/null)
+done
+if [ "$STALE_BACKUPS" -gt 0 ]; then
+  echo -e "${BLUE}[migration]${NC} Removed $STALE_BACKUPS stale timestamped backups from previous installs"
+  echo ""
+fi
+
 # ═══ Wizard ═══
 if [ "$AUTO" = false ]; then
   echo -e "${BLUE}Installation mode:${NC}"
@@ -107,16 +122,25 @@ echo -e "  Mode: ${BOLD}$INSTALL_MODE${NC}"
 echo ""
 
 backup_if_exists() {
-  if [ -f "$1" ] && [ ! -L "$1" ]; then
-    local backup="$1.pre-build-backup.$(date +%s)"
-    cp "$1" "$backup"
-    BACKED_UP_FILES+=("$1|$backup")
+  # Idempotent: fixed suffix (no timestamp), skip if backup already exists,
+  # skip if target is identical to source about to be installed.
+  local target="$1" source="${2:-}"
+  if [ -f "$target" ] && [ ! -L "$target" ]; then
+    # If we know the source and it's identical, no backup needed.
+    if [ -n "$source" ] && [ -f "$source" ] && cmp -s "$source" "$target"; then
+      return 0
+    fi
+    local backup="$target.pre-build-backup"
+    if [ ! -f "$backup" ]; then
+      cp "$target" "$backup"
+      BACKED_UP_FILES+=("$target|$backup")
+    fi
   fi
 }
 
 install_file() {
   mkdir -p "$(dirname "$2")"
-  backup_if_exists "$2"
+  backup_if_exists "$2" "$1"
   cp "$1" "$2"
   [[ "$2" == *.sh ]] && chmod +x "$2"
   INSTALLED_FILES+=("$2")
@@ -220,21 +244,39 @@ fi
 # ═══ Step 6: Settings ═══
 echo -e "${BLUE}[6/8] Settings${NC}"
 if [ -f "$SKILL_DIR/core/settings/hooks-build.json" ] && command -v python3 &>/dev/null; then
-  python3 "$SKILL_DIR/core/settings/merge-hooks.py" \
+  # Capture stderr so we can surface real errors instead of silently swallowing them.
+  merge_err=$(python3 "$SKILL_DIR/core/settings/merge-hooks.py" \
     "$CLAUDE_DIR/settings.json" \
-    "$SKILL_DIR/core/settings/hooks-build.json" \
-    2>/dev/null && echo -e "  ${GREEN}✓${NC} Build hooks merged" \
-    || echo -e "  ${YELLOW}~${NC} Manual hook setup needed"
+    "$SKILL_DIR/core/settings/hooks-build.json" 2>&1) \
+    && echo -e "  ${GREEN}✓${NC} Build hooks merged" \
+    || { echo -e "  ${YELLOW}~${NC} Hook merge failed:"; echo "$merge_err" | sed 's/^/      /'; echo "    Manual fix: edit $CLAUDE_DIR/settings.json"; }
 fi
 
-# Ensure agent teams env
-python3 -c "
-import json, sys
-p = sys.argv[1]
-with open(p) as f: s=json.load(f)
-s.setdefault('env',{})['CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS']='1'
-with open(p,'w') as f: json.dump(s,f,indent=2,ensure_ascii=False)
-" "$CLAUDE_DIR/settings.json" 2>/dev/null && echo -e "  ${GREEN}✓${NC} AGENT_TEAMS enabled" || true
+# Ensure agent teams env — atomic write + missing-file safe + diagnostics
+mkdir -p "$CLAUDE_DIR"
+SETTINGS_PATH="$CLAUDE_DIR/settings.json" python3 << 'PYEOF' && echo -e "  ${GREEN}✓${NC} AGENT_TEAMS enabled" || echo -e "  ${YELLOW}~${NC} AGENT_TEAMS env update failed (see error above)"
+import json, os, tempfile
+p = os.environ["SETTINGS_PATH"]
+try:
+    with open(p) as f:
+        s = json.load(f)
+except FileNotFoundError:
+    s = {}
+except json.JSONDecodeError as e:
+    print(f"  ERROR: {p} is not valid JSON: {e}")
+    raise SystemExit(1)
+s.setdefault("env", {})["CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"] = "1"
+# Atomic write: tmp + rename
+fd, tmp = tempfile.mkstemp(prefix=".settings.", suffix=".tmp", dir=os.path.dirname(p) or ".")
+try:
+    with os.fdopen(fd, "w") as f:
+        json.dump(s, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, p)
+except Exception:
+    try: os.unlink(tmp)
+    except OSError: pass
+    raise
+PYEOF
 
 # ═══ Step 6.5: Optional NeoLabHQ context-engineering-kit ═══
 echo -e "${BLUE}[6.5/8] NeoLabHQ context-engineering-kit (optional)${NC}"
@@ -291,13 +333,15 @@ inject_managed_block() {
   local target="$1"
   [ -f "$target" ] || touch "$target"
   TARGET_PATH="$target" python3 << 'PYEOF' && echo -e "  ${GREEN}✓${NC} $(basename "$target") updated" || echo -e "  ${YELLOW}~${NC} $(basename "$target") skipped"
-import os
+import os, re
 p = os.environ["TARGET_PATH"]
 content = open(p).read()
-marker = "# [SKILL-BUILD-MANAGED]"
-block = """# [SKILL-BUILD-MANAGED]
 
-## claude-skill-build conventions
+START = "# [SKILL-BUILD-MANAGED-START]"
+END = "# [SKILL-BUILD-MANAGED-END]"
+LEGACY_MARKER = "# [SKILL-BUILD-MANAGED]"
+
+body = """## claude-skill-build conventions
 
 When the build skill is active, the bundled SDD and SADD skills (sdd:*, sadd:*) store all specifications in **`.memory-bank/specs/`** (not `.specs/`).
 
@@ -312,11 +356,27 @@ This consolidates all project artifacts under Memory Bank as the single source o
 
 **Legacy migration:** if you have an existing `.specs/` directory, run `mv .specs .memory-bank/specs` or symlink: `ln -s .memory-bank/specs .specs`.
 """
-if marker in content:
-    content = content[:content.index(marker)].rstrip() + "\n"
-if content and not content.endswith("\n"):
-    content += "\n"
-content += "\n" + block
+block = f"{START}\n\n{body}\n{END}\n"
+
+# 1. Strip new-style paired block if present (idempotent re-install)
+content = re.sub(re.escape(START) + r".*?" + re.escape(END) + r"\n?", "", content, flags=re.DOTALL)
+
+# 2. Migrate legacy single-marker block:
+#    Cut from LEGACY_MARKER up to (but NOT including) the next "# [" top-level marker,
+#    or to EOF if no such marker exists. Preserves user's sibling sections like
+#    [MEMORY-BANK-SKILL], [CUSTOM-RULES], etc. that were appended after the legacy block.
+idx = content.find(LEGACY_MARKER)
+if idx != -1:
+    # Find next "# [" on its own line, AFTER the legacy marker line itself.
+    nl_after_marker = content.find("\n", idx)
+    next_marker = re.search(r"\n# \[", content[nl_after_marker:]) if nl_after_marker != -1 else None
+    if next_marker:
+        end_idx = nl_after_marker + next_marker.start() + 1  # keep the leading \n with sibling
+        content = content[:idx] + content[end_idx:]
+    else:
+        content = content[:idx]
+
+content = content.rstrip() + ("\n\n" if content.strip() else "") + block
 open(p, "w").write(content)
 PYEOF
 }

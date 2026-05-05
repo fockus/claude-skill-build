@@ -31,7 +31,7 @@ if [ ! -f "$MANIFEST" ]; then
   echo ""
   echo "  Manual cleanup:"
   echo "    rm ~/.claude/agents/{analyst,architect,critic,debugger,designer,developer,documentor,explorer,frontend,integrator,judge,mobile,planner,researcher,reviewer,security,tester,verifier}.md"
-  echo "    rm ~/.claude/hooks/{build-deps-check,build-install-deps,go-quality,judge-findings-gate,py-quality,quality-gate,spec-verify}.sh"
+  echo "    rm ~/.claude/hooks/{active-test,arch-review,build-deps-check,build-install-deps,go-quality,judge-findings-gate,py-quality,quality-gate,spec-verify}.sh"
   echo "    rm -rf ~/.claude/commands/build/"
   echo "    rm ~/.claude/commands/{pipeline,implement}.md"
   echo "    rm -rf ~/.claude/skills/{sdd-*,reflexion-*,kaizen-*,sadd-*,harness-*,build-sdd,breezing}"
@@ -138,17 +138,31 @@ PYEOF
 fi
 
 # Remove [SKILL-BUILD-MANAGED] section from CLAUDE.md and RULES.md
+# Strategy: prefer paired START/END markers (safe — preserves user content after block).
+# Legacy single-marker fallback only triggers when paired markers are absent AND user explicitly opts in.
 remove_managed_block() {
   local target="$1"
-  if [ -f "$target" ] && grep -q "\[SKILL-BUILD-MANAGED\]" "$target"; then
-    TARGET_PATH="$target" python3 << 'PYEOF' 2>/dev/null
-import os
+  if [ -f "$target" ] && grep -q "\[SKILL-BUILD-MANAGED" "$target"; then
+    TARGET_PATH="$target" python3 << 'PYEOF'
+import os, re
 p = os.environ["TARGET_PATH"]
 content = open(p).read()
-marker = '# [SKILL-BUILD-MANAGED]'
-if marker in content:
-    open(p, 'w').write(content[:content.index(marker)].rstrip() + '\n')
-    print(f"  Cleaned {p}")
+
+START = "# [SKILL-BUILD-MANAGED-START]"
+END = "# [SKILL-BUILD-MANAGED-END]"
+LEGACY = "# [SKILL-BUILD-MANAGED]"
+
+if START in content and END in content:
+    new = re.sub(re.escape(START) + r".*?" + re.escape(END) + r"\n?", "", content, flags=re.DOTALL)
+    open(p, "w").write(new.rstrip() + "\n")
+    print(f"  Cleaned paired block in {p}")
+elif LEGACY in content:
+    # Legacy single-marker: this is destructive — would delete everything from marker to EOF.
+    # Refuse to do it automatically; warn the user instead.
+    print(f"  WARNING: legacy single-marker block in {p} — not removed (would delete user content after marker).")
+    print(f"           Edit manually or re-install latest build to convert to paired markers.")
+else:
+    print(f"  No managed block in {p}")
 PYEOF
   fi
 }
