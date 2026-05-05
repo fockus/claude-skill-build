@@ -275,6 +275,35 @@ Calibration data in `core/calibration/` — known-good samples (score >= 4.5) an
 
 ## Bundled skills (33)
 
+### Cheat sheet — which skill when?
+
+```
+Don't know what to build      →  /sdd-brainstorm  →  /sdd-create-ideas
+Know what, not how            →  /sdd-plan
+Implement from spec           →  /sdd-implement
+Many similar edits in N files →  /sadd-do-in-parallel
+Sequential pipeline           →  /sadd-do-in-steps
+Multiple options, pick best   →  /sadd-do-competitively
+Critical decision, deep think →  /sadd-tree-of-thoughts
+Sanity check my solution      →  /reflexion-reflect
+Multi-judge debate review     →  /reflexion-critique
+Bug, no idea why              →  /kaizen-why  (5 Whys)
+Trace error to root cause     →  /kaizen-root-cause-tracing
+Full post-mortem              →  /kaizen-analyse-problem  (A3)
+Plan tasks in Plans.md        →  /harness-plan
+Execute Plans.md (any size)   →  /harness-work   (solo/parallel/breezing auto)
+Pre-merge review              →  /harness-review (security + perf + quality + a11y)
+Cut a release                 →  /harness-release patch|minor|major
+"Just do everything"          →  /breezing
+```
+
+**Rule of thumb:**
+- **SDD** — before code (specifications)
+- **SADD** — during code (multi-agent execution)
+- **Reflexion** — after code (self-critique)
+- **Kaizen** — when stuck (root cause)
+- **Harness** — full task lifecycle (alternative to `/build:phase`)
+
 ### SDD (Spec-Driven Development) — always installed
 - `/sdd-brainstorm` — ideation, explore alternatives before planning
 - `/sdd-plan` — multi-agent spec planning (researcher + analyst + architect)
