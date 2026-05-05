@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════
+# build — convenience CLI for claude-skill-build
+# Symlinked to ~/.local/bin/build by install.sh
+# ═══════════════════════════════════════════════════════════════
+set -euo pipefail
+
+# Resolve the actual skill directory even if invoked via symlink
+if [ -L "${BASH_SOURCE[0]}" ]; then
+  SCRIPT="$(readlink "${BASH_SOURCE[0]}")"
+else
+  SCRIPT="${BASH_SOURCE[0]}"
+fi
+SKILL_DIR="$(cd "$(dirname "$SCRIPT")" && pwd)"
+
+if [ ! -f "$SKILL_DIR/install.sh" ]; then
+  echo "ERROR: claude-skill-build not found at $SKILL_DIR" >&2
+  echo "Re-install: curl -fsSL https://raw.githubusercontent.com/fockus/claude-skill-build/main/bootstrap.sh | bash" >&2
+  exit 1
+fi
+
+VERSION=$(cat "$SKILL_DIR/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "?")
+
+cmd_help() {
+  cat <<EOF
+build v$VERSION — claude-skill-build CLI
+
+Shell commands (run from any directory):
+  build help                 show this message
+  build version              show version ($VERSION)
+  build status               installation status + components
+  build install [flags]      run installer (passes flags through)
+                             flags: --auto --full --core
+  build update [flags]       update everything (build + bundled + kit + reinstall)
+                             flags: --check --yes --skip-bundled --skip-kit --core
+  build uninstall            remove all installed files
+  build sync-bundled         re-sync bundled skills from NeoLabHQ upstream
+
+In-Claude commands (use inside Claude Code):
+  /build:help                rich workflow guide and command tree
+  /build:fast "desc"         typo / 1-file fix
+  /build:quick "desc"        ad-hoc 2-5 files with TDD
+  /build:phase N             ROADMAP phase, 1-3 tasks
+  /build:team-phase N        ROADMAP phase, 4+ tasks (parallel agents)
+  /build:autonomous-all      autopilot all remaining phases
+  /build:review "scope"      multi-agent code review
+  /build:init                initialize GSD + bridge to Memory Bank
+  /build:status              project dashboard
+
+Bundled skills:
+  /sdd-*, /sadd-*, /reflexion-*, /kaizen-*, /harness-*  (33 total)
+  See README.md "Cheat sheet" section for which skill when.
+
+Source: https://github.com/fockus/claude-skill-build
+Docs:   $SKILL_DIR/README.md
+EOF
+}
+
+cmd_status() {
+  echo "claude-skill-build v$VERSION"
+  echo "Location: $SKILL_DIR"
+  if [ -f "$SKILL_DIR/.installed-manifest.json" ]; then
+    files=$(python3 -c "import json; print(len(json.load(open('$SKILL_DIR/.installed-manifest.json')).get('files',[])))" 2>/dev/null || echo "?")
+    mode=$(python3 -c "import json; print(json.load(open('$SKILL_DIR/.installed-manifest.json')).get('mode','?'))" 2>/dev/null || echo "?")
+    echo "Status: installed ($files files, mode=$mode)"
+  else
+    echo "Status: not installed (run: build install)"
+  fi
+  if [ -f "$SKILL_DIR/skills/.upstream-version" ]; then
+    grep -E "^(commit|synced):" "$SKILL_DIR/skills/.upstream-version" | sed 's/^/  upstream /'
+  fi
+}
+
+case "${1:-help}" in
+  help|--help|-h)         cmd_help ;;
+  version|--version|-v)   echo "$VERSION" ;;
+  status)                 cmd_status ;;
+  install)                shift; exec "$SKILL_DIR/install.sh" "$@" ;;
+  update)                 shift; exec "$SKILL_DIR/update.sh" "$@" ;;
+  uninstall)              shift; exec "$SKILL_DIR/uninstall.sh" "$@" ;;
+  sync-bundled)           shift; exec "$SKILL_DIR/update-bundled-skills.sh" "$@" ;;
+  *)
+    echo "Unknown command: $1" >&2
+    echo "Try: build help" >&2
+    exit 1
+    ;;
+esac

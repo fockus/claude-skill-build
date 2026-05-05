@@ -46,6 +46,20 @@ GSD is installed automatically during build installation (step 7).
 
 ## Install
 
+**One-line install (recommended):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fockus/claude-skill-build/main/bootstrap.sh | bash
+```
+
+With flags:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fockus/claude-skill-build/main/bootstrap.sh | bash -s -- --auto --full
+```
+
+**Or manual git clone:**
+
 ```bash
 git clone https://github.com/fockus/claude-skill-build.git ~/.claude/skills/claude-skill-build
 cd ~/.claude/skills/claude-skill-build && chmod +x install.sh uninstall.sh update.sh && ./install.sh
@@ -60,15 +74,41 @@ cd ~/.claude/skills/claude-skill-build && chmod +x install.sh uninstall.sh updat
 ./install.sh --auto   # Full, non-interactive
 ```
 
+### `build` shell command
+
+After install, `~/.local/bin/build` is symlinked. Add `~/.local/bin` to `$PATH` if not already:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"   # add to .zshrc / .bashrc
+```
+
+Then:
+
+```bash
+build help                 # all subcommands
+build version              # show version
+build status               # installation status + components
+build install [flags]      # run installer
+build update               # update everything
+build update --check       # check for updates only
+build uninstall            # remove
+build sync-bundled         # re-sync NeoLabHQ skills from upstream
+```
+
 ### Update
 
 ```bash
-~/.claude/skills/claude-skill-build/update.sh                     # Pull build skill + reinstall
-~/.claude/skills/claude-skill-build/update.sh --core              # Pull + reinstall core only
-~/.claude/skills/claude-skill-build/update-bundled-skills.sh      # Sync 25 NeoLabHQ skills (sdd/reflexion/kaizen/sadd) from upstream
+build update                    # interactive: pre-pull preview + confirmation
+build update --yes              # auto-apply (no confirmation)
+build update --check            # only check, don't apply
+build update --skip-bundled     # skip NeoLabHQ upstream sync
+build update --skip-kit         # skip kit refresh
+
+# Or use the script directly:
+~/.claude/skills/claude-skill-build/update.sh
 ```
 
-`update-bundled-skills.sh` re-pulls the latest from [NeoLabHQ/context-engineering-kit](https://github.com/NeoLabHQ/context-engineering-kit) and applies our patches via `scripts/patches.sh`. Tracked in `skills/.upstream-version`.
+`update.sh` runs 4 steps: pull build repo → sync bundled skills from [NeoLabHQ/context-engineering-kit](https://github.com/NeoLabHQ/context-engineering-kit) → refresh kit (if installed) → re-run install (re-applies patches + rules).
 
 ### Spec storage convention
 

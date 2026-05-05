@@ -154,6 +154,13 @@ PYEOF
 }
 remove_managed_block "$CLAUDE_DIR/CLAUDE.md"
 remove_managed_block "$CLAUDE_DIR/RULES.md"
+
+# Remove ~/.local/bin/build symlink
+LOCAL_BIN_BUILD="$HOME/.local/bin/build"
+if [ -L "$LOCAL_BIN_BUILD" ]; then
+  rm "$LOCAL_BIN_BUILD"
+  echo -e "  ${GREEN}[rm]${NC} $LOCAL_BIN_BUILD"
+fi
 echo ""
 
 # ═══ Step 4: Cleanup ═══

@@ -325,6 +325,23 @@ inject_managed_block "$CLAUDE_DIR/CLAUDE.md"
 [ -f "$CLAUDE_DIR/RULES.md" ] && inject_managed_block "$CLAUDE_DIR/RULES.md" \
   || echo -e "  ${YELLOW}~${NC} ~/.claude/RULES.md not present (memory-bank not installed?) — skipping"
 
+# ═══ Step 7.7: Install 'build' shell wrapper ═══
+echo -e "${BLUE}[7.7/8] Install 'build' command into ~/.local/bin${NC}"
+LOCAL_BIN="$HOME/.local/bin"
+mkdir -p "$LOCAL_BIN"
+if [ -f "$SKILL_DIR/build" ]; then
+  chmod +x "$SKILL_DIR/build"
+  ln -sf "$SKILL_DIR/build" "$LOCAL_BIN/build"
+  echo -e "  ${GREEN}✓${NC} Symlinked: $LOCAL_BIN/build → $SKILL_DIR/build"
+  if ! echo ":$PATH:" | grep -q ":$LOCAL_BIN:"; then
+    echo -e "  ${YELLOW}~${NC} $LOCAL_BIN is not in your \$PATH"
+    echo "    Add to your shell rc:  export PATH=\"\$HOME/.local/bin:\$PATH\""
+  fi
+  echo "    Then: build help"
+else
+  echo -e "  ${YELLOW}~${NC} build wrapper not found in skill dir"
+fi
+
 # ═══ Step 8: Manifest ═══
 echo -e "${BLUE}[8/8] Manifest${NC}"
 INSTALLED_FILES_STR="$(printf '%s\n' "${INSTALLED_FILES[@]}")" \
