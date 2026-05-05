@@ -2,7 +2,7 @@
 
 Build pipeline: multi-agent phase orchestration with quality gates.
 
-**Requires:** claude-skill-memory-bank (rules, commands, project memory).
+**Requires:** skill-memory-bank (rules, commands, project memory).
 
 ## Build Commands
 

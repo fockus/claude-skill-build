@@ -2,7 +2,7 @@
 # ═══════════════════════════════════════════════════════════════
 # claude-skill-build — Installer
 # Build pipeline + 18 agents + 7 hooks + 33 bundled skills
-# Requires: claude-skill-memory-bank (external)
+# Requires: skill-memory-bank (external)
 # Optional: claude-skill-find-skill (external)
 # ═══════════════════════════════════════════════════════════════
 set -euo pipefail
@@ -12,7 +12,7 @@ CLAUDE_DIR="$HOME/.claude"
 MANIFEST="$SKILL_DIR/.installed-manifest.json"
 AUTO=false
 INSTALL_MODE="full"  # full | core
-GSD_VERSION="1.14.0"  # Pin to known good version
+GSD_VERSION="1.40.0"  # Pin to known good version
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -40,14 +40,14 @@ echo -e "${BLUE}[0/8] Checking dependencies${NC}"
 DEPS_OK=true
 
 # Memory Bank (REQUIRED)
-if [ -d "$CLAUDE_DIR/skills/memory-bank" ] || [ -d "$CLAUDE_DIR/skills/claude-skill-memory-bank" ]; then
+if [ -d "$CLAUDE_DIR/skills/memory-bank" ] || [ -d "$CLAUDE_DIR/skills/skill-memory-bank" ]; then
   echo -e "  ${GREEN}✓${NC} Memory Bank installed"
 else
   echo -e "  ${RED}✗${NC} Memory Bank NOT installed (REQUIRED)"
   echo ""
   echo "    Install it first:"
-  echo "    git clone https://github.com/fockus/claude-skill-memory-bank.git ~/.claude/skills/claude-skill-memory-bank"
-  echo "    cd ~/.claude/skills/claude-skill-memory-bank && ./install.sh"
+  echo "    git clone https://github.com/fockus/skill-memory-bank.git ~/.claude/skills/skill-memory-bank"
+  echo "    cd ~/.claude/skills/skill-memory-bank && ./install.sh"
   echo ""
   DEPS_OK=false
 fi
@@ -148,17 +148,22 @@ echo -e "  ${GREEN}✓${NC} $count commands (pipeline, implement)"
 # ═══ Step 5: Bundled Skills ═══
 echo -e "${BLUE}[5/8] Bundled Skills${NC}"
 
+# Install a skill directory recursively (preserves subdirs like templates/, references/)
+install_skill_dir() {
+  local src="$1" dest="$2"
+  mkdir -p "$dest"
+  while IFS= read -r f; do
+    local rel="${f#$src/}"
+    install_file "$f" "$dest/$rel"
+  done < <(find "$src" -type f)
+}
+
 # SDD — always install (required for pipeline)
 sdd_count=0
 for skill_dir in "$SKILL_DIR/skills/sdd-"* "$SKILL_DIR/skills/build-sdd"; do
   [ -d "$skill_dir" ] || continue
   skill_name="$(basename "$skill_dir")"
-  dest="$CLAUDE_DIR/skills/$skill_name"
-  mkdir -p "$dest"
-  for f in "$skill_dir"/*; do
-    [ -f "$f" ] || continue
-    install_file "$f" "$dest/$(basename "$f")"
-  done
+  install_skill_dir "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
   sdd_count=$((sdd_count + 1))
 done
 echo -e "  ${GREEN}✓${NC} SDD: $sdd_count skills (required)"
@@ -168,12 +173,7 @@ if [ "$INSTALL_MODE" = "full" ]; then
   for skill_dir in "$SKILL_DIR/skills/"*/; do
     skill_name="$(basename "$skill_dir")"
     case "$skill_name" in sdd-*|build-sdd) continue ;; esac
-    dest="$CLAUDE_DIR/skills/$skill_name"
-    mkdir -p "$dest"
-    for f in "$skill_dir"/*; do
-      [ -f "$f" ] || continue
-      install_file "$f" "$dest/$(basename "$f")"
-    done
+    install_skill_dir "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
     opt_count=$((opt_count + 1))
   done
   echo -e "  ${GREEN}✓${NC} Extra: $opt_count skills (reflexion, kaizen, sadd, harness)"

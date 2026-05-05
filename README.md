@@ -26,7 +26,7 @@ Build commands orchestrate all three, adding quality gates (judge, reviewer, hoo
 
 | Dependency | Required | What it does | Install |
 |-----------|----------|-------------|---------|
-| [claude-skill-memory-bank](https://github.com/fockus/claude-skill-memory-bank) | **Yes** | Project memory, rules, CLAUDE.md generation | See below |
+| [skill-memory-bank](https://github.com/fockus/skill-memory-bank) | **Yes** | Project memory, rules, CLAUDE.md generation | See below |
 | [GSD](https://www.npmjs.com/package/get-shit-done-cc) | **Yes** | Execution engine (phases, plans, roadmaps) | Auto-installed by `install.sh` |
 | [claude-skill-find-skill](https://github.com/fockus/claude-skill-find-skill) | No | Skill discovery and installation | See below |
 
@@ -34,8 +34,8 @@ Build commands orchestrate all three, adding quality gates (judge, reviewer, hoo
 
 ```bash
 # 1. Memory Bank (REQUIRED — install first)
-git clone https://github.com/fockus/claude-skill-memory-bank.git ~/.claude/skills/claude-skill-memory-bank
-cd ~/.claude/skills/claude-skill-memory-bank && chmod +x install.sh uninstall.sh && ./install.sh
+git clone https://github.com/fockus/skill-memory-bank.git ~/.claude/skills/skill-memory-bank
+cd ~/.claude/skills/skill-memory-bank && chmod +x install.sh uninstall.sh && ./install.sh
 
 # 2. Find Skill (optional — skill discovery)
 git clone https://github.com/fockus/claude-skill-find-skill.git ~/.claude/skills/claude-skill-find-skill
