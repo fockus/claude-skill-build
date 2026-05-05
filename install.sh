@@ -35,9 +35,11 @@ BLUE='\033[0;34m'; BOLD='\033[1m'; NC='\033[0m'
 INSTALLED_FILES=()
 BACKED_UP_FILES=()
 
+VERSION=$(cat "$SKILL_DIR/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "dev")
+
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════════════${NC}"
-echo -e "${BOLD}   Claude Skill Build — Installer${NC}"
+echo -e "${BOLD}   Claude Skill Build — Installer (v${VERSION})${NC}"
 echo -e "${BOLD}═══════════════════════════════════════════════════${NC}"
 echo ""
 

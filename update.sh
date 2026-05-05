@@ -6,6 +6,8 @@
 #
 # Usage:
 #   ./update.sh                  # full: build + bundled + kit + reinstall
+#   ./update.sh --check          # only check if update available, don't apply
+#   ./update.sh --yes            # skip pre-pull confirmation prompt
 #   ./update.sh --skip-bundled   # skip upstream sync of bundled skills
 #   ./update.sh --skip-kit       # skip kit refresh (if installed)
 #   ./update.sh --core           # core install mode (no extras)
@@ -18,11 +20,15 @@ BOLD='\033[1m'; GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; BLUE=
 SKIP_BUNDLED=false
 SKIP_KIT=false
 CORE=false
+CHECK_ONLY=false
+ASSUME_YES=false
 for a in "$@"; do
   case "$a" in
     --skip-bundled) SKIP_BUNDLED=true ;;
     --skip-kit)     SKIP_KIT=true ;;
     --core)         CORE=true ;;
+    --check)        CHECK_ONLY=true ;;
+    --yes|-y)       ASSUME_YES=true ;;
   esac
 done
 
@@ -41,17 +47,50 @@ if ! git -C "$SKILL_DIR" diff --quiet 2>/dev/null || ! git -C "$SKILL_DIR" diff 
   exit 1
 fi
 
-# ═══ 2. Pull build repo ═══
-echo -e "${BLUE}[1/4]${NC} Pulling build repo..."
+# ═══ 2. Check for new version (pre-pull preview) ═══
+echo -e "${BLUE}[1/4]${NC} Checking for updates..."
+LOCAL_VERSION=$(cat "$SKILL_DIR/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+git -C "$SKILL_DIR" fetch --quiet origin main 2>&1 | sed 's/^/  /'
 BEFORE=$(git -C "$SKILL_DIR" rev-parse HEAD)
+REMOTE=$(git -C "$SKILL_DIR" rev-parse origin/main)
+REMOTE_VERSION=$(git -C "$SKILL_DIR" show origin/main:VERSION 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+
+if [ "$BEFORE" = "$REMOTE" ]; then
+  echo -e "  ${GREEN}✓${NC} Already at latest (v${LOCAL_VERSION})"
+  if [ "$CHECK_ONLY" = true ]; then exit 0; fi
+else
+  AHEAD=$(git -C "$SKILL_DIR" rev-list --count HEAD..origin/main)
+  echo -e "  ${YELLOW}↑${NC} Update available: v${LOCAL_VERSION} → v${REMOTE_VERSION} (${AHEAD} commits)"
+  echo ""
+  echo -e "${BOLD}  Changelog preview:${NC}"
+  git -C "$SKILL_DIR" log --oneline --no-decorate "HEAD..origin/main" | head -20 | sed 's/^/    /'
+  if [ "$AHEAD" -gt 20 ]; then echo "    ... and $((AHEAD - 20)) more"; fi
+  echo ""
+
+  if [ "$CHECK_ONLY" = true ]; then
+    echo "  Run without --check to apply the update."
+    exit 0
+  fi
+
+  if [ "$ASSUME_YES" = false ]; then
+    read -rp "  Apply update? (y/n): " confirm
+    if [[ ! "$confirm" =~ ^[Yy] ]]; then
+      echo -e "  ${YELLOW}Cancelled.${NC}"
+      exit 0
+    fi
+  fi
+fi
+
+echo ""
+echo -e "${BLUE}[1/4]${NC} Pulling build repo..."
 git -C "$SKILL_DIR" pull --ff-only origin main 2>&1 | sed 's/^/  /'
 AFTER=$(git -C "$SKILL_DIR" rev-parse HEAD)
 
 if [ "$BEFORE" = "$AFTER" ]; then
-  echo -e "  ${GREEN}✓${NC} Build repo already at HEAD"
+  echo -e "  ${GREEN}✓${NC} Build repo at v${LOCAL_VERSION} (no changes)"
 else
-  echo -e "  ${GREEN}✓${NC} Build repo updated:"
-  git -C "$SKILL_DIR" log --oneline "$BEFORE".."$AFTER" | sed 's/^/    /'
+  NEW_VERSION=$(cat "$SKILL_DIR/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+  echo -e "  ${GREEN}✓${NC} Build repo: v${LOCAL_VERSION} → v${NEW_VERSION}"
 fi
 echo ""
 
