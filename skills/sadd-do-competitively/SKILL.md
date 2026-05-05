@@ -58,10 +58,10 @@ Phase 3: Evidence-Based Synthesis         │                       │
 Before starting, ensure the reports directory exists:
 
 ```bash
-mkdir -p .specs/reports
+mkdir -p .memory-bank/specs/reports
 ```
 
-**Report naming convention:** `.specs/reports/{solution-name}-{YYYY-MM-DD}.[1|2|3].md`
+**Report naming convention:** `.memory-bank/specs/reports/{solution-name}-{YYYY-MM-DD}.[1|2|3].md`
 
 Where:
 
@@ -69,7 +69,7 @@ Where:
 - `{YYYY-MM-DD}` - Current date
 - `[1|2|3]` - Judge number
 
-**Note:** Solutions remain in their specified output locations; only evaluation reports go to `.specs/reports/`
+**Note:** Solutions remain in their specified output locations; only evaluation reports go to `.memory-bank/specs/reports/`
 
 ### Phase 1: Competitive Generation + Meta-Judge (IN PARALLEL)
 
@@ -212,7 +212,7 @@ Launch **3 independent judges in parallel** (recommended: Opus for rigor):
    - **Comparative analysis** (which solution excels where)
    - **Evidence-based ratings** (with specific quotes/examples)
    - **Final vote** (which solution they prefer and why)
-4. Reports saved to distinct files (e.g., `.specs/reports/{solution-name}-{date}.[1|2|3].md`)
+4. Reports saved to distinct files (e.g., `.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md`)
 
 **Key principle:** Multiple independent evaluations reduce bias and catch different issues.
 
@@ -236,7 +236,7 @@ CLAUDE_PLUGIN_ROOT=`${CLAUDE_PLUGIN_ROOT}`
 ```
 
 ## Output
-Write full report to: {.specs/reports/{solution-name}-{date}.[1|2|3].md - each judge gets unique number identifier}
+Write full report to: {.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md - each judge gets unique number identifier}
 
 CRITICAL: You must reply with this exact structured header format:
 
@@ -525,7 +525,7 @@ The command produces different outputs depending on the adaptive strategy select
 ### Outputs (All Strategies)
 
 1. **Candidate solutions:** `{solution-file}.[a|b|c].[ext]` (in specified output location)
-2. **Evaluation reports:** `.specs/reports/{solution-name}-{date}.[1|2|3].md`
+2. **Evaluation reports:** `.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md`
 3. **Resulting solution:** `{output_path}`
 
 ### Strategy-Specific Outputs
@@ -563,7 +563,7 @@ Candidate Solutions:
 - {solution-file}.[a|b|c].[ext] (Score: [X.X]/5.0)
 
 Evaluation Reports:
-- .specs/reports/{solution-file}-{date}.[1|2|3].md (Vote: [Solution A/B/C])
+- .memory-bank/specs/reports/{solution-file}-{date}.[1|2|3].md (Vote: [Solution A/B/C])
 
 Synthesis Decisions
 
@@ -621,7 +621,7 @@ Synthesis Decisions
 
 **Phase 2 outputs** (assuming date 2025-01-15, 3 judges using meta-judge specification):
 
-- `.specs/reports/users-api-2025-01-15.1.md`:
+- `.memory-bank/specs/reports/users-api-2025-01-15.1.md`:
 
   ```
   VOTE: Solution A
@@ -630,7 +630,7 @@ Synthesis Decisions
 
   "Most RESTful, good security"
 
-- `.specs/reports/users-api-2025-01-15.2.md`:
+- `.memory-bank/specs/reports/users-api-2025-01-15.2.md`:
 
   ```
   VOTE: Solution A
@@ -639,7 +639,7 @@ Synthesis Decisions
 
   "Clean resource design, scalable"
 
-- `.specs/reports/users-api-2025-01-15.3.md`:
+- `.memory-bank/specs/reports/users-api-2025-01-15.3.md`:
 
   ```
   VOTE: Solution A
@@ -679,7 +679,7 @@ Synthesis Decisions
 
 **Phase 2 outputs** (assuming date 2025-01-15, 3 judges using meta-judge specification):
 
-- `.specs/reports/caching-2025-01-15.1.md`:
+- `.memory-bank/specs/reports/caching-2025-01-15.1.md`:
 
   ```
   VOTE: Solution B
@@ -688,7 +688,7 @@ Synthesis Decisions
 
   "Best performance, complex"
 
-- `.specs/reports/caching-2025-01-15.2.md`:
+- `.memory-bank/specs/reports/caching-2025-01-15.2.md`:
 
   ```
   VOTE: Solution A
@@ -697,7 +697,7 @@ Synthesis Decisions
 
   "Simple, reliable, proven"
 
-- `.specs/reports/caching-2025-01-15.3.md`:
+- `.memory-bank/specs/reports/caching-2025-01-15.3.md`:
 
   ```
   VOTE: Solution C
@@ -739,7 +739,7 @@ Synthesis Decisions
 
 **Phase 2 outputs** (assuming date 2025-01-15, 3 judges using meta-judge specification):
 
-- `.specs/reports/auth-2025-01-15.1.md`:
+- `.memory-bank/specs/reports/auth-2025-01-15.1.md`:
 
   ```
   VOTE: Solution A
@@ -748,7 +748,7 @@ Synthesis Decisions
 
   "Security risks, reinventing wheel"
 
-- `.specs/reports/auth-2025-01-15.2.md`:
+- `.memory-bank/specs/reports/auth-2025-01-15.2.md`:
 
   ```
   VOTE: Solution B
@@ -757,7 +757,7 @@ Synthesis Decisions
 
   "Sessions don't scale, missing requirements"
 
-- `.specs/reports/auth-2025-01-15.3.md`:
+- `.memory-bank/specs/reports/auth-2025-01-15.3.md`:
 
   ```
   VOTE: Solution C

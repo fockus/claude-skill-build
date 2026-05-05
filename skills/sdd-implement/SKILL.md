@@ -236,9 +236,9 @@ Human verification checkpoints occur:
 
 Task status is managed by folder location:
 
-- `.specs/tasks/todo/` - Tasks waiting to be implemented
-- `.specs/tasks/in-progress/` - Tasks currently being worked on
-- `.specs/tasks/done/` - Completed tasks
+- `.memory-bank/specs/tasks/todo/` - Tasks waiting to be implemented
+- `.memory-bank/specs/tasks/in-progress/` - Tasks currently being worked on
+- `.memory-bank/specs/tasks/done/` - Completed tasks
 
 ### Status Transitions
 
@@ -417,7 +417,7 @@ Parse user input to get the task file path and arguments.
 1. **Check in-progress folder first:**
 
    ```bash
-   ls .specs/tasks/in-progress/*.md 2>/dev/null
+   ls .memory-bank/specs/tasks/in-progress/*.md 2>/dev/null
    ```
 
    - If exactly 1 file → Set `$TASK_FILE` to that file, `$TASK_FOLDER` to `in-progress`
@@ -427,7 +427,7 @@ Parse user input to get the task file path and arguments.
 2. **Check todo folder:**
 
    ```bash
-   ls .specs/tasks/todo/*.md 2>/dev/null
+   ls .memory-bank/specs/tasks/todo/*.md 2>/dev/null
    ```
 
    - If exactly 1 file → Set `$TASK_FILE` to that file, `$TASK_FOLDER` to `todo`
@@ -445,14 +445,14 @@ Parse user input to get the task file path and arguments.
 **If task is in `todo/` folder:**
 
 ```bash
-git mv .specs/tasks/todo/$TASK_FILE .specs/tasks/in-progress/
-# Fallback if git not available: mv .specs/tasks/todo/$TASK_FILE .specs/tasks/in-progress/
+git mv .memory-bank/specs/tasks/todo/$TASK_FILE .memory-bank/specs/tasks/in-progress/
+# Fallback if git not available: mv .memory-bank/specs/tasks/todo/$TASK_FILE .memory-bank/specs/tasks/in-progress/
 ```
 
-Update `$TASK_PATH` to `.specs/tasks/in-progress/$TASK_FILE`
+Update `$TASK_PATH` to `.memory-bank/specs/tasks/in-progress/$TASK_FILE`
 
 **If task is already in `in-progress/`:**
-Set `$TASK_PATH` to `.specs/tasks/in-progress/$TASK_FILE`
+Set `$TASK_PATH` to `.memory-bank/specs/tasks/in-progress/$TASK_FILE`
 
 ### Step 0.3: Parse Flags and Initialize Configuration
 
@@ -1009,8 +1009,8 @@ Confirm all Definition of Done items are marked complete in the task file.
 TASK_FILENAME=$(basename $TASK_PATH)
 
 # Move from in-progress to done
-git mv .specs/tasks/in-progress/$TASK_FILENAME .specs/tasks/done/
-# Fallback if git not available: mv .specs/tasks/in-progress/$TASK_FILENAME .specs/tasks/done/
+git mv .memory-bank/specs/tasks/in-progress/$TASK_FILENAME .memory-bank/specs/tasks/done/
+# Fallback if git not available: mv .memory-bank/specs/tasks/in-progress/$TASK_FILENAME .memory-bank/specs/tasks/done/
 ```
 
 ---
@@ -1283,8 +1283,8 @@ After all steps complete and DoD verification passes:
 User: /implement add-validation.feature.md
 
 Phase 0: Task Selection...
-Found task in: .specs/tasks/todo/add-validation.feature.md
-Moving to in-progress: .specs/tasks/in-progress/add-validation.feature.md
+Found task in: .memory-bank/specs/tasks/todo/add-validation.feature.md
+Moving to in-progress: .memory-bank/specs/tasks/in-progress/add-validation.feature.md
 
 Phase 1: Loading task...
 Task: "Add form validation service"
@@ -1322,7 +1322,7 @@ Launching DoD verification agent...
   Result: 4/4 items PASS ✅
 
 Phase 4: Moving task to done...
-  mv .specs/tasks/in-progress/add-validation.feature.md .specs/tasks/done/
+  mv .memory-bank/specs/tasks/in-progress/add-validation.feature.md .memory-bank/specs/tasks/done/
 
 Phase 5: Final Report
 Implementation complete.
@@ -1330,7 +1330,7 @@ Implementation complete.
 - 6 artifacts verified
 - All passed first try
 - Definition of Done: 4/4 PASS
-- Task location: .specs/tasks/done/add-validation.feature.md ✅
+- Task location: .memory-bank/specs/tasks/done/add-validation.feature.md ✅
 ```
 
 ### Example 2: Handling DoD Item Failure
@@ -1365,7 +1365,7 @@ Phase 5: Final Report
 Task verification complete.
 - All DoD items now PASS
 - 1 issue fixed (ESLint errors)
-- Task location: .specs/tasks/done/ ✅
+- Task location: .memory-bank/specs/tasks/done/ ✅
 ```
 
 ### Example 3: Handling Verification Failure
@@ -1612,7 +1612,7 @@ Before completing implementation:
 
 ### Context Protection (CRITICAL)
 
-- [ ] Read ONLY the task file (`$TASK_PATH` in `.specs/tasks/in-progress/`) - no other files
+- [ ] Read ONLY the task file (`$TASK_PATH` in `.memory-bank/specs/tasks/in-progress/`) - no other files
 - [ ] Did NOT read implementation outputs, reference files, or artifacts
 - [ ] Used sub-agent reports for status - did NOT read files to "check"
 

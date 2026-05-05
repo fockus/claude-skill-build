@@ -63,9 +63,20 @@ cd ~/.claude/skills/claude-skill-build && chmod +x install.sh uninstall.sh updat
 ### Update
 
 ```bash
-~/.claude/skills/claude-skill-build/update.sh         # Pull + reinstall
-~/.claude/skills/claude-skill-build/update.sh --core   # Pull + reinstall core only
+~/.claude/skills/claude-skill-build/update.sh                     # Pull build skill + reinstall
+~/.claude/skills/claude-skill-build/update.sh --core              # Pull + reinstall core only
+~/.claude/skills/claude-skill-build/update-bundled-skills.sh      # Sync 25 NeoLabHQ skills (sdd/reflexion/kaizen/sadd) from upstream
 ```
+
+`update-bundled-skills.sh` re-pulls the latest from [NeoLabHQ/context-engineering-kit](https://github.com/NeoLabHQ/context-engineering-kit) and applies our patches via `scripts/patches.sh`. Tracked in `skills/.upstream-version`.
+
+### Spec storage convention
+
+When `claude-skill-build` is installed, all SDD/SADD specs are stored under **`.memory-bank/specs/`** — not the upstream `.specs/`. This consolidation puts all project artifacts under Memory Bank.
+
+Subdirectories: `tasks/{draft,todo,in-progress,done}/`, `plans/`, `scratchpad/`, `analysis/`, `reports/`, `research/`.
+
+The convention is injected into `~/.claude/CLAUDE.md` as a `[SKILL-BUILD-MANAGED]` block on install, removed on uninstall.
 
 ## What gets installed
 

@@ -1,7 +1,7 @@
 ---
 name: sdd:plan
 description: Refine, parallelize, and verify a draft task specification into a fully planned implementation-ready task
-argument-hint: Path to draft task file (e.g., ".specs/tasks/draft/add-validation.feature.md") [options]
+argument-hint: Path to draft task file (e.g., ".memory-bank/specs/tasks/draft/add-validation.feature.md") [options]
 ---
 
 # Refine Task Workflow
@@ -39,7 +39,7 @@ Parse the following arguments from `$ARGUMENTS`:
 
 | Argument | Format | Default | Description |
 |----------|--------|---------|-------------|
-| `task-file` | Path to task file | **Required** | Path to draft task file (e.g., `.specs/tasks/draft/add-validation.feature.md`) |
+| `task-file` | Path to task file | **Required** | Path to draft task file (e.g., `.memory-bank/specs/tasks/draft/add-validation.feature.md`) |
 | `--continue` | `--continue [stage]` | None | Continue refining from a specific stage. Stage is optional - resolve from context if not provided. |
 | `--target-quality` | `--target-quality X.X` | `3.5` | Target threshold value (out of 5.0) for judge pass/fail decisions. |
 | `--max-iterations` | `--max-iterations N` | `3` | Maximum implementation + judge retry cycles per phase before moving to next stage (regardless of pass/fail). |
@@ -70,7 +70,7 @@ Parse `$ARGUMENTS` and resolve configuration as follows:
 ```
 
 # Extract task file path (first positional argument, required)
-TASK_FILE = first argument that is a file path (must exist in .specs/tasks/draft/)
+TASK_FILE = first argument that is a file path (must exist in .memory-bank/specs/tasks/draft/)
 
 # Parse alias flags first (they set multiple defaults)
 if --fast present:
@@ -144,7 +144,7 @@ When `--refine` is used:
 
    ```bash
    # User edited the Architecture Overview section
-   /plan .specs/tasks/todo/my-task.feature.md --refine
+   /plan .memory-bank/specs/tasks/todo/my-task.feature.md --refine
    
    # Detects Architecture section changed → re-runs from Phase 3 onwards
    # Skips: research, codebase analysis, business analysis
@@ -196,19 +196,19 @@ Human verification checkpoints occur:
 
 ```bash
 # Refine a draft task with all stages
-/plan .specs/tasks/draft/add-validation.feature.md
+/plan .memory-bank/specs/tasks/draft/add-validation.feature.md
 
 # Fast refinement with minimal stages
-/plan .specs/tasks/draft/quick-fix.bug.md --fast
+/plan .memory-bank/specs/tasks/draft/quick-fix.bug.md --fast
 
 # Continue from a specific stage
-/plan .specs/tasks/draft/complex-feature.feature.md --continue decomposition
+/plan .memory-bank/specs/tasks/draft/complex-feature.feature.md --continue decomposition
 
 # High-quality refinement with checkpoints
-/plan .specs/tasks/draft/critical-api.feature.md --target-quality 4.5 --human-in-the-loop 2,3,4,5,6
+/plan .memory-bank/specs/tasks/draft/critical-api.feature.md --target-quality 4.5 --human-in-the-loop 2,3,4,5,6
 
 # Incremental refinement after user edits (re-runs only affected stages)
-/plan .specs/tasks/todo/my-task.feature.md --refine
+/plan .memory-bank/specs/tasks/todo/my-task.feature.md --refine
 ```
 
 ## Pre-Flight Checks
@@ -216,8 +216,8 @@ Human verification checkpoints occur:
 Before starting workflow:
 
 1. **Validate task file exists:**
-   - If `REFINE_MODE` is false: Check that `TASK_FILE` exists in `.specs/tasks/draft/`
-   - If `REFINE_MODE` is true: Check that `TASK_FILE` exists in `.specs/tasks/todo/` or `.specs/tasks/draft/`
+   - If `REFINE_MODE` is false: Check that `TASK_FILE` exists in `.memory-bank/specs/tasks/draft/`
+   - If `REFINE_MODE` is true: Check that `TASK_FILE` exists in `.memory-bank/specs/tasks/todo/` or `.memory-bank/specs/tasks/draft/`
    - If not found, show error and exit
 
 2. **Parse and display resolved configuration:**
@@ -314,12 +314,12 @@ Before starting workflow:
 
    This creates:
 
-   - `.specs/tasks/draft/` - New tasks awaiting analysis
-   - `.specs/tasks/todo/` - Tasks ready to implement
-   - `.specs/tasks/in-progress/` - Currently being worked on
-   - `.specs/tasks/done/` - Completed tasks
-   - `.specs/scratchpad/` - Temporary working files (gitignored)
-   - `.specs/analysis/` - Codebase impact analysis files
+   - `.memory-bank/specs/tasks/draft/` - New tasks awaiting analysis
+   - `.memory-bank/specs/tasks/todo/` - Tasks ready to implement
+   - `.memory-bank/specs/tasks/in-progress/` - Currently being worked on
+   - `.memory-bank/specs/tasks/done/` - Completed tasks
+   - `.memory-bank/specs/scratchpad/` - Temporary working files (gitignored)
+   - `.memory-bank/specs/analysis/` - Codebase impact analysis files
    - `.claude/skills/` - Reusable skill documents
 
 Update each todo to `in_progress` when starting a phase and `completed` when judge passes.
@@ -334,7 +334,7 @@ Update each todo to `in_progress` when starting a phase and `completed` when jud
 - Skip phases not in `ACTIVE_STAGES` entirely - do not launch agents for excluded stages!
 - Trigger human-in-the-loop checkpoints ONLY after phases in `HUMAN_IN_THE_LOOP_PHASES`!
 - **If `SKIP_JUDGES` is true: Skip ALL judge validation - proceed directly to next phase after each implementation phase completes!**
-- **Task file must exist in `.specs/tasks/draft/` before running this command (unless `--refine` mode)!**
+- **Task file must exist in `.memory-bank/specs/tasks/draft/` before running this command (unless `--refine` mode)!**
 - **If `REFINE_MODE` is true: Detect changes via git diff, skip unchanged stages, pass user feedback to agents!**
 
 ### Execution & Evaluation Rules
@@ -365,7 +365,7 @@ You MUST launch for each step a separate agent, instead of performing all steps 
 `HUMAN_IN_THE_LOOP_PHASES`.
 
 ```
-Input: Draft Task File (.specs/tasks/draft/*.md)
+Input: Draft Task File (.memory-bank/specs/tasks/draft/*.md)
     │
     ▼
 Phase 2: Parallel Analysis
@@ -444,7 +444,7 @@ Launch agent:
 
 - Skill file path (e.g., `.claude/skills/<skill-name>/SKILL.md`)
 - Skill action (Created new / Updated existing)
-- Scratchpad file path (e.g., `.specs/scratchpad/<hex-id>.md`)
+- Scratchpad file path (e.g., `.memory-bank/specs/scratchpad/<hex-id>.md`)
 - Number of resources gathered
 - Key recommendation summary
 
@@ -475,8 +475,8 @@ Launch agent:
 
 **Capture:**
 
-- Analysis file path (e.g., `.specs/analysis/analysis-{name}.md`)
-- Scratchpad file path (e.g., `.specs/scratchpad/<hex-id>.md`)
+- Analysis file path (e.g., `.memory-bank/specs/analysis/analysis-{name}.md`)
+- Scratchpad file path (e.g., `.memory-bank/specs/scratchpad/<hex-id>.md`)
 - Files affected count (modify/create/delete)
 - Risk level assessment
 - Key integration points
@@ -510,7 +510,7 @@ Launch agent:
 
 **Capture:**
 
-- Scratchpad file path (e.g., `.specs/scratchpad/<hex-id>.md`)
+- Scratchpad file path (e.g., `.memory-bank/specs/scratchpad/<hex-id>.md`)
 - Acceptance criteria count
 - Scope defined (yes/no)
 - User scenarios documented
@@ -718,7 +718,7 @@ Launch agent:
 
 **Capture:**
 
-- Scratchpad file path (e.g., `.specs/scratchpad/<hex-id>.md`)
+- Scratchpad file path (e.g., `.memory-bank/specs/scratchpad/<hex-id>.md`)
 - Sections added to task file
 - Key architectural decisions count
 - Components identified (if applicable)
@@ -808,7 +808,7 @@ Launch agent:
 
 **Capture:**
 
-- Scratchpad file path (e.g., `.specs/scratchpad/<hex-id>.md`)
+- Scratchpad file path (e.g., `.memory-bank/specs/scratchpad/<hex-id>.md`)
 - Implementation steps count
 - Total subtasks count
 - Critical path steps
@@ -903,7 +903,7 @@ Launch agent:
 
 **Capture:**
 
-- Scratchpad file path (e.g., `.specs/scratchpad/<hex-id>.md`)
+- Scratchpad file path (e.g., `.memory-bank/specs/scratchpad/<hex-id>.md`)
 - Number of steps reorganized
 - Maximum parallelization depth
 - Agent distribution summary
@@ -995,7 +995,7 @@ Launch agent:
 
 **Capture:**
 
-- Scratchpad file path (e.g., `.specs/scratchpad/<hex-id>.md`)
+- Scratchpad file path (e.g., `.memory-bank/specs/scratchpad/<hex-id>.md`)
 - Number of steps with verification
 - Total evaluations defined
 - Verification breakdown (Panel/Per-Item/None)
@@ -1069,8 +1069,8 @@ After all phases complete:
 1. **Move task file from draft to todo:**
 
    ```bash
-   git mv <TASK_FILE> .specs/tasks/todo/
-   # Fallback if git not available: mv <TASK_FILE> .specs/tasks/todo/
+   git mv <TASK_FILE> .memory-bank/specs/tasks/todo/
+   # Fallback if git not available: mv <TASK_FILE> .memory-bank/specs/tasks/todo/
    ```
 
 2. **Update any references** in research and analysis files if needed
@@ -1090,7 +1090,7 @@ After all executed phases and judges complete:
 | Property | Value |
 |----------|-------|
 | **Original File** | `<original TASK_FILE path>` |
-| **Final Location** | `.specs/tasks/todo/<filename>` (ready for implementation) |
+| **Final Location** | `.memory-bank/specs/tasks/todo/<filename>` (ready for implementation) |
 | **Title** | `<task title>` |
 | **Type** | `<feature/bug/refactor/test/docs/chore/ci>` (from filename) |
 | **Skill** | `<skill file path or "Skipped">` |
@@ -1141,7 +1141,7 @@ After all executed phases and judges complete:
     └── <skill-name>/
         └── SKILL.md             # Reusable skill document (if research stage ran)
 
-.specs/
+.memory-bank/specs/
 ├── tasks/
 │   ├── draft/                   # Draft tasks (source - now empty for this task)
 │   ├── todo/
@@ -1165,7 +1165,7 @@ Task status is managed by folder location:
 
 ### Next Steps
 
-1. Review task: `.specs/tasks/todo/<filename>`
+1. Review task: `.memory-bank/specs/tasks/todo/<filename>`
    - Edit the task file directly to make corrections
    - Add `//` comments to lines that need clarification or changes
    - Run `/plan` again with `--refine` to incorporate your feedback — it detects changes against git and propagates updates **top-to-bottom** (editing a section only affects sections below it, not above)

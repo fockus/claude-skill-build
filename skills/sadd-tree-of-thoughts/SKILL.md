@@ -71,20 +71,20 @@ Phase 5: Synthesis (Only if FULL_SYNTHESIS)                    │
 Before starting, ensure the directory structure exists:
 
 ```bash
-mkdir -p .specs/research .specs/reports
+mkdir -p .memory-bank/specs/research .memory-bank/specs/reports
 ```
 
 **Naming conventions:**
-- Proposals: `.specs/research/{solution-name}-{YYYY-MM-DD}.proposals.[a|b|c].md`
-- Pruning: `.specs/research/{solution-name}-{YYYY-MM-DD}.pruning.[1|2|3].md`
-- Selection: `.specs/research/{solution-name}-{YYYY-MM-DD}.selection.md`
-- Evaluation: `.specs/reports/{solution-name}-{YYYY-MM-DD}.[1|2|3].md`
+- Proposals: `.memory-bank/specs/research/{solution-name}-{YYYY-MM-DD}.proposals.[a|b|c].md`
+- Pruning: `.memory-bank/specs/research/{solution-name}-{YYYY-MM-DD}.pruning.[1|2|3].md`
+- Selection: `.memory-bank/specs/research/{solution-name}-{YYYY-MM-DD}.selection.md`
+- Evaluation: `.memory-bank/specs/reports/{solution-name}-{YYYY-MM-DD}.[1|2|3].md`
 
 Where:
 - `{solution-name}` - Derived from output path (e.g., `users-api` from output `specs/api/users.md`)
 - `{YYYY-MM-DD}` - Current date
 
-**Note:** Solutions remain in their specified output locations; only research and evaluation files go to `.specs/`
+**Note:** Solutions remain in their specified output locations; only research and evaluation files go to `.memory-bank/specs/`
 
 ### Phase 1: Exploration (Propose Approaches)
 
@@ -98,7 +98,7 @@ Launch **3 independent agents in parallel** (recommended: Sonnet for speed):
    - **Probability estimate** (0.0-1.0)
    - **Estimated complexity** (low/medium/high)
    - **Potential risks** and failure modes
-4. Proposals saved to `.specs/research/{solution-name}-{date}.proposals.[a|b|c].md`
+4. Proposals saved to `.memory-bank/specs/research/{solution-name}-{date}.proposals.[a|b|c].md`
 
 **Key principle:** Systematic exploration through probabilistic sampling from the full distribution of possible approaches.
 
@@ -118,7 +118,7 @@ Launch **3 independent agents in parallel** (recommended: Sonnet for speed):
 </context>
 
 <output>
-{.specs/research/{solution-name}-{date}.proposals.[a|b|c].md - each agent gets unique letter identifier}
+{.memory-bank/specs/research/{solution-name}-{date}.proposals.[a|b|c].md - each agent gets unique letter identifier}
 </output>
 
 Instructions:
@@ -214,13 +214,13 @@ Use Task tool:
 
 Launch **3 independent judges in parallel** (recommended: Opus for rigor):
 
-1. Each judge receives **ALL proposal files** (from `.specs/research/`) and the **pruning meta-judge evaluation specification YAML**
+1. Each judge receives **ALL proposal files** (from `.memory-bank/specs/research/`) and the **pruning meta-judge evaluation specification YAML**
 2. Judges evaluate each proposal against the **meta-judge-generated pruning criteria**
 3. Each judge produces:
    - **Scores for each proposal** (with evidence)
    - **Vote for top 3 proposals** to expand
    - **Rationale** for selections
-4. Votes saved to `.specs/research/{solution-name}-{date}.pruning.[1|2|3].md`
+4. Votes saved to `.memory-bank/specs/research/{solution-name}-{date}.pruning.[1|2|3].md`
 
 **Key principle:** Independent evaluation with meta-judge-generated criteria ensures consistent, tailored assessment without hardcoded weights.
 
@@ -247,7 +247,7 @@ Read all proposals carefully before evaluating.
 ```
 
 ## Output
-{.specs/research/{solution-name}-{date}.pruning.[1|2|3].md}
+{.memory-bank/specs/research/{solution-name}-{date}.pruning.[1|2|3].md}
 
 ## Instructions
 
@@ -276,7 +276,7 @@ After judges complete voting:
    - 3rd choice = 1 point
 2. **Select top 3** proposals by total points
 3. **Handle ties** by comparing average scores across criteria
-4. **Document selection** in `.specs/research/{solution-name}-{date}.selection.md`:
+4. **Document selection** in `.memory-bank/specs/research/{solution-name}-{date}.selection.md`:
    - Vote tallies
    - Selected proposals
    - Consensus rationale
@@ -439,7 +439,7 @@ Launch **3 independent judges in parallel** (recommended: Opus for rigor):
    - **Comparative analysis** (which solution excels where)
    - **Evidence-based ratings** (with specific quotes/examples)
    - **Final vote** (which solution they prefer and why)
-4. Reports saved to `.specs/reports/{solution-name}-{date}.[1|2|3].md`
+4. Reports saved to `.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md`
 
 **Key principle:** Multiple independent evaluations with meta-judge-generated specifications and explicit evidence reduce bias and catch different quality aspects.
 
@@ -468,7 +468,7 @@ Read all solutions carefully before evaluating.
 ```
 
 ## Output
-Write full report to: .specs/reports/{solution-name}-{date}.[1|2|3].md
+Write full report to: .memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md
 
 CRITICAL: You must reply with this exact structured header format:
 
@@ -664,7 +664,7 @@ All solutions scored below 3.0/5.0 threshold.
 </evaluation_reports>
 
 <output>
-.specs/research/{solution-name}-{date}.redesign-analysis.md
+.memory-bank/specs/research/{solution-name}-{date}.redesign-analysis.md
 </output>
 
 Instructions:
@@ -712,8 +712,8 @@ Launch **1 synthesis agent** (recommended: Opus for quality):
 
 1. Agent receives:
    - **All solutions** (from specified output location)
-   - **All evaluation reports** (from `.specs/reports/`)
-   - **Selection rationale** from pruning phase (from `.specs/research/`)
+   - **All evaluation reports** (from `.memory-bank/specs/reports/`)
+   - **Selection rationale** from pruning phase (from `.memory-bank/specs/research/`)
 2. Agent analyzes:
    - **Consensus strengths** (what multiple judges praised)
    - **Consensus weaknesses** (what multiple judges criticized)
@@ -832,16 +832,16 @@ The command produces different outputs depending on the adaptive strategy select
 
 ### Outputs (All Strategies)
 
-1. **Research directory:** `.specs/research/` (created if not exists)
-   - Proposals: `.specs/research/{solution-name}-{date}.proposals.[a|b|c].md` - High-level approaches with probabilities
-   - Pruning: `.specs/research/{solution-name}-{date}.pruning.[1|2|3].md` - Judge evaluations and votes
-   - Selection: `.specs/research/{solution-name}-{date}.selection.md` - Vote tallies and selected proposals
+1. **Research directory:** `.memory-bank/specs/research/` (created if not exists)
+   - Proposals: `.memory-bank/specs/research/{solution-name}-{date}.proposals.[a|b|c].md` - High-level approaches with probabilities
+   - Pruning: `.memory-bank/specs/research/{solution-name}-{date}.pruning.[1|2|3].md` - Judge evaluations and votes
+   - Selection: `.memory-bank/specs/research/{solution-name}-{date}.selection.md` - Vote tallies and selected proposals
 
 2. **Expansion outputs:**
    - `solution.a.md`, `solution.b.md`, `solution.c.md` - Full implementations (in specified output location)
 
-3. **Reports directory:** `.specs/reports/` (created if not exists)
-   - Evaluation: `.specs/reports/{solution-name}-{date}.[1|2|3].md` - Final judge reports
+3. **Reports directory:** `.memory-bank/specs/reports/` (created if not exists)
+   - Evaluation: `.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md` - Final judge reports
 
 4. **Resulting solution:** `{output_path}`
 
@@ -887,18 +887,18 @@ The command produces different outputs depending on the adaptive strategy select
 ```
 
 **Phase 1 outputs** (assuming date 2025-01-15):
-- `.specs/research/users-api-2025-01-15.proposals.a.md` - 6 approaches from Agent A
-- `.specs/research/users-api-2025-01-15.proposals.b.md` - 6 approaches from Agent B
-- `.specs/research/users-api-2025-01-15.proposals.c.md` - 6 approaches from Agent C
+- `.memory-bank/specs/research/users-api-2025-01-15.proposals.a.md` - 6 approaches from Agent A
+- `.memory-bank/specs/research/users-api-2025-01-15.proposals.b.md` - 6 approaches from Agent B
+- `.memory-bank/specs/research/users-api-2025-01-15.proposals.c.md` - 6 approaches from Agent C
 
 **Phase 1.5 output** (runs in parallel with Phase 1):
 - Pruning Meta-judge (Opus, `sadd:meta-judge`) generates pruning evaluation specification YAML
 
 **Phase 2 outputs** (3 judges with pruning meta-judge spec):
-- `.specs/research/users-api-2025-01-15.pruning.1.md` - Top 3: Resource-based REST, Pure REST, Monolithic
-- `.specs/research/users-api-2025-01-15.pruning.2.md` - Top 3: Pure REST, Hybrid (services), Resource-based REST
-- `.specs/research/users-api-2025-01-15.pruning.3.md` - Top 3: Resource-based REST, REST+GraphQL hybrid, Pure REST
-- `.specs/research/users-api-2025-01-15.selection.md` - Selected: Resource-based REST (8 pts), Pure REST (7 pts), Monolithic (4 pts)
+- `.memory-bank/specs/research/users-api-2025-01-15.pruning.1.md` - Top 3: Resource-based REST, Pure REST, Monolithic
+- `.memory-bank/specs/research/users-api-2025-01-15.pruning.2.md` - Top 3: Pure REST, Hybrid (services), Resource-based REST
+- `.memory-bank/specs/research/users-api-2025-01-15.pruning.3.md` - Top 3: Resource-based REST, REST+GraphQL hybrid, Pure REST
+- `.memory-bank/specs/research/users-api-2025-01-15.selection.md` - Selected: Resource-based REST (8 pts), Pure REST (7 pts), Monolithic (4 pts)
 
 **Phase 3 outputs:**
 - `specs/api/users.a.md` - Full resource-based design with nested routes
@@ -909,21 +909,21 @@ The command produces different outputs depending on the adaptive strategy select
 - Evaluation Meta-judge (Opus, `sadd:meta-judge`) generates evaluation specification YAML
 
 **Phase 4 outputs** (3 judges with evaluation meta-judge spec):
-- `.specs/reports/users-api-2025-01-15.1.md`:
+- `.memory-bank/specs/reports/users-api-2025-01-15.1.md`:
   ```
   VOTE: Solution A
   SCORES: A=4.2/5.0, B=3.8/5.0, C=3.4/5.0
   ```
   "Prefers A for RESTfulness, criticizes C complexity"
 
-- `.specs/reports/users-api-2025-01-15.2.md`:
+- `.memory-bank/specs/reports/users-api-2025-01-15.2.md`:
   ```
   VOTE: Solution B
   SCORES: A=3.9/5.0, B=4.1/5.0, C=3.5/5.0
   ```
   "Prefers B for simplicity, criticizes A deep nesting"
 
-- `.specs/reports/users-api-2025-01-15.3.md`:
+- `.memory-bank/specs/reports/users-api-2025-01-15.3.md`:
   ```
   VOTE: Solution A
   SCORES: A=4.3/5.0, B=3.6/5.0, C=3.2/5.0

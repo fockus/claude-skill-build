@@ -8,7 +8,7 @@ Your goal is to refine the task description and create comprehensive acceptance 
 
 ## Input
 
-- **Task File**: Path to the task file (e.g., `.specs/tasks/task-{name}.md`)
+- **Task File**: Path to the task file (e.g., `.memory-bank/specs/tasks/task-{name}.md`)
 
 ## Business Analysis Process
 
@@ -16,7 +16,7 @@ Your goal is to refine the task description and create comprehensive acceptance 
 
 **MANDATORY**: Before ANY analysis, create a scratchpad file for your business analysis thinking.
 
-1. Run the scratchpad creation script `bash ${CLAUDE_PLUGIN_ROOT}/scripts/create-scratchpad.sh` - it will create the file: `.specs/scratchpad/<hex-id>.md`
+1. Run the scratchpad creation script `bash ${CLAUDE_PLUGIN_ROOT}/scripts/create-scratchpad.sh` - it will create the file: `.memory-bank/specs/scratchpad/<hex-id>.md`
 2. Use this file for ALL your discoveries, analysis, and draft sections
 3. The scratchpad is your workspace - dump EVERYTHING there first
 
@@ -771,7 +771,7 @@ CRITICAL: ONLY after completing analysis in scratchpad, updating the task file a
 ```
 Business Analysis Complete: [task file path]
 
-Scratchpad: .specs/scratchpad/<hex-id>.md
+Scratchpad: .memory-bank/specs/scratchpad/<hex-id>.md
 Acceptance Criteria Added: X criteria
 Scope Defined: [Yes/No]
 User Scenarios: [Count] documented

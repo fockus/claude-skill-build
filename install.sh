@@ -234,6 +234,28 @@ s.setdefault('env',{})['CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS']='1'
 with open(p,'w') as f: json.dump(s,f,indent=2,ensure_ascii=False)
 " "$CLAUDE_DIR/settings.json" 2>/dev/null && echo -e "  ${GREEN}✓${NC} AGENT_TEAMS enabled" || true
 
+# ═══ Step 6.5: Optional NeoLabHQ context-engineering-kit ═══
+echo -e "${BLUE}[6.5/8] NeoLabHQ context-engineering-kit (optional)${NC}"
+echo "  We vendor a subset of NeoLabHQ kit (sdd/reflexion/kaizen/sadd — 25 skills)."
+echo "  The full kit adds: ddd, fpf, git, mcp, review, tdd, tech-stack."
+if command -v npx &>/dev/null; then
+  if [ "$AUTO" = true ]; then
+    DO_KIT=false
+  else
+    read -rp "  Install full kit via 'npx skills add NeoLabHQ/context-engineering-kit'? (y/n): " kit_ans
+    DO_KIT=false; [[ "$kit_ans" =~ ^[Yy] ]] && DO_KIT=true
+  fi
+  if [ "$DO_KIT" = true ]; then
+    npx -y skills add NeoLabHQ/context-engineering-kit 2>&1 | tail -5 \
+      && echo -e "  ${GREEN}✓${NC} Kit installed" \
+      || echo -e "  ${YELLOW}~${NC} Kit install failed. Manual: npx skills add NeoLabHQ/context-engineering-kit"
+  else
+    echo -e "  ${YELLOW}~${NC} Skipped. Run later: npx skills add NeoLabHQ/context-engineering-kit"
+  fi
+else
+  echo -e "  ${YELLOW}~${NC} npx not found — install Node.js to use the kit"
+fi
+
 # ═══ Step 7: GSD ═══
 echo -e "${BLUE}[7/8] GSD (Get Shit Done)${NC}"
 if [ -f "$GSD_DIR/VERSION" ]; then
@@ -253,6 +275,48 @@ else
     echo -e "  ${YELLOW}~${NC} Skipped. Some /build:* commands need GSD."
   fi
 fi
+
+# ═══ Step 7.5: CLAUDE.md conventions ═══
+echo -e "${BLUE}[7.5/8] Inject build conventions into ~/.claude/CLAUDE.md${NC}"
+CLAUDE_MD="$CLAUDE_DIR/CLAUDE.md"
+[ -f "$CLAUDE_MD" ] || touch "$CLAUDE_MD"
+CLAUDE_MD_PATH="$CLAUDE_MD" python3 << 'PYEOF' && echo -e "  ${GREEN}✓${NC} Build conventions injected" || echo -e "  ${YELLOW}~${NC} CLAUDE.md update skipped"
+import os, re
+
+p = os.environ["CLAUDE_MD_PATH"]
+content = open(p).read()
+marker = "# [SKILL-BUILD-MANAGED]"
+
+block = """# [SKILL-BUILD-MANAGED]
+
+## claude-skill-build conventions
+
+When the build skill is active, the bundled SDD and SADD skills (sdd:*, sadd:*) store all specifications in **`.memory-bank/specs/`** (not `.specs/`).
+
+Subdirectories under `.memory-bank/specs/`:
+
+- `tasks/` — task lifecycle: `draft/`, `todo/`, `in-progress/`, `done/`
+- `plans/` — design documents from `sdd:brainstorm`
+- `scratchpad/` — temporary working files (gitignored)
+- `analysis/`, `reports/`, `research/` — analysis outputs
+
+This consolidates all project artifacts under Memory Bank as the single source of truth.
+
+**Legacy migration:** if you have an existing `.specs/` directory, run `mv .specs .memory-bank/specs` or symlink: `ln -s .memory-bank/specs .specs`.
+"""
+
+# Remove any existing managed block (everything from marker to end-of-file or next ^# section)
+if marker in content:
+    idx = content.index(marker)
+    content = content[:idx].rstrip() + "\n"
+
+# Append fresh block
+if content and not content.endswith("\n"):
+    content += "\n"
+content += "\n" + block
+
+open(p, "w").write(content)
+PYEOF
 
 # ═══ Step 8: Manifest ═══
 echo -e "${BLUE}[8/8] Manifest${NC}"

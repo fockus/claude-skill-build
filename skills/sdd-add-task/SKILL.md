@@ -1,6 +1,6 @@
 ---
 name: sdd:add-task
-description: creates draft task file in .specs/tasks/draft/ with original user intent
+description: creates draft task file in .memory-bank/specs/tasks/draft/ with original user intent
 argument-hint: Task title or description (e.g., "Add validation to form inputs") [list of task files that this task depends on]
 ---
 
@@ -12,7 +12,7 @@ Your role is to create a draft task file that exactly matches the user's request
 
 ## Goal
 
-Create a task file in `.specs/tasks/draft/` with:
+Create a task file in `.memory-bank/specs/tasks/draft/` with:
 
 - Clear, action-oriented title (verb + specific description)
 - Appropriate type classification (feature/bug/refactor/test/docs/chore/ci)
@@ -23,7 +23,7 @@ Create a task file in `.specs/tasks/draft/` with:
 ## Input
 
 - **User Input**: The task description/title provided by the user (passed as argument)
-- **Target Directory**: Default is `.specs/tasks/draft/`
+- **Target Directory**: Default is `.memory-bank/specs/tasks/draft/`
 
 ## Instructions
 
@@ -37,11 +37,11 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/create-folders.sh
 
 This creates:
 
-- `.specs/tasks/draft/` - New tasks awaiting analysis
-- `.specs/tasks/todo/` - Tasks ready to implement
-- `.specs/tasks/in-progress/` - Currently being worked on
-- `.specs/tasks/done/` - Completed tasks
-- `.specs/scratchpad/` - Temporary working files (gitignored)
+- `.memory-bank/specs/tasks/draft/` - New tasks awaiting analysis
+- `.memory-bank/specs/tasks/todo/` - Tasks ready to implement
+- `.memory-bank/specs/tasks/in-progress/` - Currently being worked on
+- `.memory-bank/specs/tasks/done/` - Completed tasks
+- `.memory-bank/specs/scratchpad/` - Temporary working files (gitignored)
 
 ### 2. Analyze Input
 
@@ -95,11 +95,11 @@ This creates:
      - `upgrade-dependencies.chore.md`
      - `add-github-actions.ci.md`
 
-3. **Verify uniqueness**: Check `.specs/tasks/draft/`, `.specs/tasks/todo/`, `.specs/tasks/in-progress/`, and `.specs/tasks/done/` for existing files with same name
+3. **Verify uniqueness**: Check `.memory-bank/specs/tasks/draft/`, `.memory-bank/specs/tasks/todo/`, `.memory-bank/specs/tasks/in-progress/`, and `.memory-bank/specs/tasks/done/` for existing files with same name
 
 ### 5. Create Task File
 
-**Use Write tool** to create `.specs/tasks/todo/<short-name>.<issue-type>.md`:
+**Use Write tool** to create `.memory-bank/specs/tasks/todo/<short-name>.<issue-type>.md`:
 
 ```markdown
 ---
@@ -119,7 +119,7 @@ depends_on: <list of task files that this task depends on>
 ## Constraints
 
 - **Do NOT** invoke the plan skill - the workflow handles subsequent phases
-- **Do NOT** create files outside `.specs/tasks/draft/`
+- **Do NOT** create files outside `.memory-bank/specs/tasks/draft/`
 - **Do NOT** modify existing task files
 - **Do NOT** write description, only put `// ...` placeholder as specified in the task file.
 - **Do NOT** write depends_on section if no dependencies are provided.
@@ -128,14 +128,14 @@ depends_on: <list of task files that this task depends on>
 
 Return to the orchestrator:
 
-1. **Task file path**: Full path to created file (e.g., `.specs/tasks/todo/add-validation-login-form.feature.md`)
+1. **Task file path**: Full path to created file (e.g., `.memory-bank/specs/tasks/todo/add-validation-login-form.feature.md`)
 2. **Generated title**: The action-oriented title created
 3. **Issue type**: `task`, `bug`, or `feature`
 
 Format:
 
 ```
-Created task file: .specs/tasks/draft/<name>.<type>.md
+Created task file: .memory-bank/specs/tasks/draft/<name>.<type>.md
 Title: <action-oriented title>
 Type: <task|bug|feature>
 Depends on: <list of task files that this task depends on>
@@ -143,8 +143,8 @@ Depends on: <list of task files that this task depends on>
 
 ## Success Criteria
 
-- [ ] Directories `.specs/tasks/draft/`, `.specs/tasks/todo/`, `.specs/tasks/in-progress/`, `.specs/tasks/done/` exist
-- [ ] Task file created in `.specs/tasks/draft/` with correct naming convention (`<name>.<type>.md`)
+- [ ] Directories `.memory-bank/specs/tasks/draft/`, `.memory-bank/specs/tasks/todo/`, `.memory-bank/specs/tasks/in-progress/`, `.memory-bank/specs/tasks/done/` exist
+- [ ] Task file created in `.memory-bank/specs/tasks/draft/` with correct naming convention (`<name>.<type>.md`)
 - [ ] File name is unique across all status folders (no overwriting existing files)
 - [ ] Depends on section is correct if dependencies are provided
 - [ ] Title starts with action verb (Add, Fix, Implement, Update, Remove, Refactor)
@@ -154,7 +154,7 @@ Depends on: <list of task files that this task depends on>
 
 ## Examples
 
-**Test task** (`.specs/tasks/draft/add-unit-tests-auth.test.md`):
+**Test task** (`.memory-bank/specs/tasks/draft/add-unit-tests-auth.test.md`):
 
 ```markdown
 ---
@@ -170,7 +170,7 @@ add tests for auth
 // Will be filled in future stages by business analyst
 ```
 
-**Bug with context** (`.specs/tasks/draft/fix-login-timeout.bug.md`):
+**Bug with context** (`.memory-bank/specs/tasks/draft/fix-login-timeout.bug.md`):
 
 ```markdown
 ---
@@ -186,7 +186,7 @@ users getting 504 errors on slow wifi
 // Will be filled in future stages by business analyst
 ```
 
-**Feature request** (`.specs/tasks/draft/implement-dark-mode.feature.md`):
+**Feature request** (`.memory-bank/specs/tasks/draft/implement-dark-mode.feature.md`):
 
 ```markdown
 ---

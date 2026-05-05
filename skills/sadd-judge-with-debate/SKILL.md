@@ -28,7 +28,7 @@ This command implements iterative multi-judge debate:
 
 ```
 Phase 0: Setup
-         mkdir -p .specs/reports
+         mkdir -p .memory-bank/specs/reports
                   |
 Phase 0.5: Dispatch Meta-Judge
          Meta-Judge (Opus)
@@ -60,10 +60,10 @@ Phase 2: Debate Round (iterative)     |
 Before starting evaluation, ensure the reports directory exists:
 
 ```bash
-mkdir -p .specs/reports
+mkdir -p .memory-bank/specs/reports
 ```
 
-**Report naming convention:** `.specs/reports/{solution-name}-{YYYY-MM-DD}.[1|2|3].md`
+**Report naming convention:** `.memory-bank/specs/reports/{solution-name}-{YYYY-MM-DD}.[1|2|3].md`
 
 Where:
 - `{solution-name}` - Derived from solution filename (e.g., `users-api` from `src/api/users.ts`)
@@ -120,7 +120,7 @@ Launch **3 independent judge agents in parallel** (Opus for rigor):
    - Path to solution(s) being evaluated
    - The meta-judge's evaluation specification YAML
    - Task description
-2. Each produces **independent assessment** saved to `.specs/reports/{solution-name}-{date}.[1|2|3].md`
+2. Each produces **independent assessment** saved to `.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md`
 3. Reports must include:
    - Per-criterion scores with evidence
    - Specific quotes/examples supporting ratings
@@ -149,7 +149,7 @@ CLAUDE_PLUGIN_ROOT=`${CLAUDE_PLUGIN_ROOT}`
 ```
 
 ## Output File
-.specs/reports/{solution-name}-{date}.{N}.md
+.memory-bank/specs/reports/{solution-name}-{date}.{N}.md
 
 ## Instructions
 
@@ -184,8 +184,8 @@ For each debate round (max 3 rounds):
 Launch **3 debate agents in parallel**:
 
 1. Each judge agent receives:
-   - Path to their own previous report (`.specs/reports/{solution-name}-{date}.[1|2|3].md`)
-   - Paths to other judges' reports (`.specs/reports/{solution-name}-{date}.[1|2|3].md`)
+   - Path to their own previous report (`.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md`)
+   - Paths to other judges' reports (`.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md`)
    - The original solution
    - The meta-judge's evaluation specification YAML
 2. Each judge:
@@ -207,10 +207,10 @@ You are Judge {N} in debate round {R}.
 CLAUDE_PLUGIN_ROOT=`${CLAUDE_PLUGIN_ROOT}`
 
 ## Your Previous Report
-{path to .specs/reports/{solution-name}-{date}.{N}.md}
+{path to .memory-bank/specs/reports/{solution-name}-{date}.{N}.md}
 
 ## Other Judges' Reports
-Judge 1: .specs/reports/{solution-name}-{date}.1.md
+Judge 1: .memory-bank/specs/reports/{solution-name}-{date}.1.md
 ...
 
 ## Task Description
@@ -226,7 +226,7 @@ Judge 1: .specs/reports/{solution-name}-{date}.1.md
 ```
 
 ## Output File
-.specs/reports/{solution-name}-{date}.{N}.md (append to existing file)
+.memory-bank/specs/reports/{solution-name}-{date}.{N}.md (append to existing file)
 
 ## Instructions
 
@@ -286,7 +286,7 @@ After each debate round, check for consensus:
 **Step 2: Run Independent Analysis (Phase 1)**
 
 1. Launch 3 judge agents in parallel (Judge 1, 2, 3) with the evaluation specification YAML
-2. Each writes their independent assessment to `.specs/reports/{solution-name}-{date}.[1|2|3].md`
+2. Each writes their independent assessment to `.memory-bank/specs/reports/{solution-name}-{date}.[1|2|3].md`
 3. Wait for all 3 agents to complete
 
 **Step 3: Check for Consensus**
@@ -396,8 +396,8 @@ Based on the consensus scores and the key strengths/weaknesses identified:
 <output>
 The command produces:
 
-1. **Reports directory**: `.specs/reports/` (created if not exists)
-2. **Initial reports**: `.specs/reports/{solution-name}-{date}.1.md`, `.specs/reports/{solution-name}-{date}.2.md`, `.specs/reports/{solution-name}-{date}.3.md`
+1. **Reports directory**: `.memory-bank/specs/reports/` (created if not exists)
+2. **Initial reports**: `.memory-bank/specs/reports/{solution-name}-{date}.1.md`, `.memory-bank/specs/reports/{solution-name}-{date}.2.md`, `.memory-bank/specs/reports/{solution-name}-{date}.3.md`
 3. **Debate updates**: Appended sections in each report file per round
 4. **Final synthesis**: Replied to user (consensus or disagreement summary)
 </output>
@@ -446,9 +446,9 @@ The command produces:
   - Rubrics, checklists, and scoring definitions for each criterion
 
 **Phase 1 - Independent Analysis** (3 judges receive specification):
-- `.specs/reports/users-api-2025-01-15.1.md` - Judge 1 scores correctness 4/5, security 3/5
-- `.specs/reports/users-api-2025-01-15.2.md` - Judge 2 scores correctness 4/5, security 5/5
-- `.specs/reports/users-api-2025-01-15.3.md` - Judge 3 scores correctness 5/5, security 4/5
+- `.memory-bank/specs/reports/users-api-2025-01-15.1.md` - Judge 1 scores correctness 4/5, security 3/5
+- `.memory-bank/specs/reports/users-api-2025-01-15.2.md` - Judge 2 scores correctness 4/5, security 5/5
+- `.memory-bank/specs/reports/users-api-2025-01-15.3.md` - Judge 3 scores correctness 5/5, security 4/5
 
 **Disagreement detected:** Security scores range from 3-5
 
