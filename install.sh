@@ -9,10 +9,16 @@ set -euo pipefail
 
 SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
+CODEX_DIR="$HOME/.codex"
+OPENCODE_DIR="$HOME/.config/opencode"
+CURSOR_DIR="$HOME/.cursor"
 MANIFEST="$SKILL_DIR/.installed-manifest.json"
 AUTO=false
 INSTALL_MODE="full"  # full | core
 GSD_VERSION="1.40.0"  # Pin to known good version
+
+# Detected secondary agents (Claude Code is mandatory primary target)
+SECONDARY_TARGETS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -72,6 +78,16 @@ if [ "$DEPS_OK" = false ]; then
   echo ""
   echo -e "${RED}Aborting: required dependencies missing.${NC}"
   exit 1
+fi
+echo ""
+
+# ═══ Step 0.5: Auto-detect secondary agents for bundled skills ═══
+echo -e "${BLUE}[auto-detect] Scanning for additional agents (bundled skills only)${NC}"
+[ -d "$CODEX_DIR" ] && SECONDARY_TARGETS+=("codex") && echo -e "  ${GREEN}✓${NC} Codex detected → $CODEX_DIR/skills/"
+[ -d "$OPENCODE_DIR" ] && SECONDARY_TARGETS+=("opencode") && echo -e "  ${GREEN}✓${NC} OpenCode detected → $OPENCODE_DIR/skills/"
+[ -d "$CURSOR_DIR" ] && SECONDARY_TARGETS+=("cursor") && echo -e "  ${GREEN}✓${NC} Cursor detected → $CURSOR_DIR/skills/"
+if [ ${#SECONDARY_TARGETS[@]} -eq 0 ]; then
+  echo -e "  ${YELLOW}~${NC} Only Claude Code detected — bundled skills will be Claude-only"
 fi
 echo ""
 
@@ -150,7 +166,7 @@ echo -e "${BLUE}[5/8] Bundled Skills${NC}"
 
 # Install a skill directory recursively (preserves subdirs like templates/, references/)
 install_skill_dir() {
-  local src="$1" dest="$2"
+  local src="${1%/}" dest="${2%/}"  # strip trailing slash so prefix-stripping works
   mkdir -p "$dest"
   while IFS= read -r f; do
     local rel="${f#$src/}"
@@ -158,25 +174,43 @@ install_skill_dir() {
   done < <(find "$src" -type f)
 }
 
+# Install a bundled skill to Claude Code + all detected secondary agents.
+# Bundled skills are pure markdown — no subagent dispatch, no hooks — work everywhere.
+install_bundled_skill() {
+  local src="$1" skill_name="$2"
+  install_skill_dir "$src" "$CLAUDE_DIR/skills/$skill_name"
+  for target in "${SECONDARY_TARGETS[@]:-}"; do
+    case "$target" in
+      codex)    install_skill_dir "$src" "$CODEX_DIR/skills/$skill_name" ;;
+      opencode) install_skill_dir "$src" "$OPENCODE_DIR/skills/$skill_name" ;;
+      cursor)   install_skill_dir "$src" "$CURSOR_DIR/skills/$skill_name" ;;
+    esac
+  done
+}
+
+# Targets summary for bundled skills
+targets_label="Claude Code"
+for t in "${SECONDARY_TARGETS[@]:-}"; do targets_label="$targets_label + $t"; done
+
 # SDD — always install (required for pipeline)
 sdd_count=0
 for skill_dir in "$SKILL_DIR/skills/sdd-"* "$SKILL_DIR/skills/build-sdd"; do
   [ -d "$skill_dir" ] || continue
   skill_name="$(basename "$skill_dir")"
-  install_skill_dir "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+  install_bundled_skill "$skill_dir" "$skill_name"
   sdd_count=$((sdd_count + 1))
 done
-echo -e "  ${GREEN}✓${NC} SDD: $sdd_count skills (required)"
+echo -e "  ${GREEN}✓${NC} SDD: $sdd_count skills → $targets_label"
 
 if [ "$INSTALL_MODE" = "full" ]; then
   opt_count=0
   for skill_dir in "$SKILL_DIR/skills/"*/; do
     skill_name="$(basename "$skill_dir")"
     case "$skill_name" in sdd-*|build-sdd) continue ;; esac
-    install_skill_dir "$skill_dir" "$CLAUDE_DIR/skills/$skill_name"
+    install_bundled_skill "$skill_dir" "$skill_name"
     opt_count=$((opt_count + 1))
   done
-  echo -e "  ${GREEN}✓${NC} Extra: $opt_count skills (reflexion, kaizen, sadd, harness)"
+  echo -e "  ${GREEN}✓${NC} Extra: $opt_count skills (reflexion, kaizen, sadd, harness) → $targets_label"
 else
   echo -e "  ${YELLOW}~${NC} Extra skills skipped (core mode). ./install.sh --full to add later."
 fi

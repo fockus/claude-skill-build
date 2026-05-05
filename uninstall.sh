@@ -8,6 +8,9 @@ set -euo pipefail
 SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
 MANIFEST="$SKILL_DIR/.installed-manifest.json"
 CLAUDE_DIR="$HOME/.claude"
+CODEX_DIR="$HOME/.codex"
+OPENCODE_DIR="$HOME/.config/opencode"
+CURSOR_DIR="$HOME/.cursor"
 
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -51,8 +54,9 @@ echo -e "${BLUE}Step 1: Removing installed files${NC}"
 while read -r filepath; do
   if [ -f "$filepath" ]; then
     case "$filepath" in
-      "$HOME/.claude/"*) rm "$filepath"; echo -e "  ${GREEN}[rm]${NC} $(basename "$filepath")" ;;
-      *) echo -e "  ${YELLOW}[SKIP]${NC} $filepath (outside ~/.claude/)" ;;
+      "$CLAUDE_DIR/"*|"$CODEX_DIR/"*|"$OPENCODE_DIR/"*|"$CURSOR_DIR/"*)
+        rm "$filepath"; echo -e "  ${GREEN}[rm]${NC} $(basename "$filepath")" ;;
+      *) echo -e "  ${YELLOW}[SKIP]${NC} $filepath (unknown location)" ;;
     esac
   fi
 done < <(python3 -c "
@@ -64,9 +68,13 @@ for f in manifest.get('files', []):
 " "$MANIFEST")
 echo -e "  ${GREEN}[OK]${NC} Files removed"
 
-# Remove empty directories created by skills
-for skill_dir in "$CLAUDE_DIR/skills/"*/; do
-  [ -d "$skill_dir" ] && rmdir "$skill_dir" 2>/dev/null || true
+# Remove empty directories created by skills (across all agents)
+for base in "$CLAUDE_DIR" "$CODEX_DIR" "$OPENCODE_DIR" "$CURSOR_DIR"; do
+  [ -d "$base/skills" ] || continue
+  for skill_dir in "$base/skills/"*/; do
+    # Recurse: rmdir empty subdirs first (templates/, references/), then the skill dir
+    find "$skill_dir" -depth -type d -empty -delete 2>/dev/null || true
+  done
 done
 rmdir "$CLAUDE_DIR/commands/build" 2>/dev/null || true
 echo ""

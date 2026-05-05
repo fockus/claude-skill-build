@@ -69,18 +69,27 @@ cd ~/.claude/skills/claude-skill-build && chmod +x install.sh uninstall.sh updat
 
 ## What gets installed
 
+**Build pipeline — Claude Code only** (relies on Claude's subagent dispatch + hooks):
+
 | Component | Count | Target |
 |-----------|-------|--------|
 | Core agents | 18 | `~/.claude/agents/` |
 | Quality hooks | 9 | `~/.claude/hooks/` |
 | Build commands | 9 | `~/.claude/commands/build/` |
 | Pipeline commands | 2 | `~/.claude/commands/` |
-| SDD skills | 5 | `~/.claude/skills/sdd-*/` (always) |
-| Reflexion skills | 3 | `~/.claude/skills/reflexion-*/` (full mode) |
-| Kaizen skills | 7 | `~/.claude/skills/kaizen-*/` (full mode) |
-| SADD skills | 10 | `~/.claude/skills/sadd-*/` (full mode) |
-| Harness skills | 6 | `~/.claude/skills/harness-*/` (full mode) |
-| Breezing | 1 | `~/.claude/skills/breezing/` (full mode) |
+
+**Bundled skills — multi-agent**: install.sh auto-detects Codex, OpenCode, Cursor and copies bundled skills to all of them (in addition to Claude Code). Pure markdown — works everywhere:
+
+| Skill set | Count | Targets |
+|-----------|-------|---------|
+| SDD skills | 5 + build-sdd templates | `~/.claude/skills/`, `~/.codex/skills/`, `~/.config/opencode/skills/`, `~/.cursor/skills/` (always) |
+| Reflexion | 3 | All detected agents (full mode) |
+| Kaizen | 7 | All detected agents (full mode) |
+| SADD | 10 | All detected agents (full mode) |
+| Harness | 6 | All detected agents (full mode) |
+| Breezing | 1 | All detected agents (full mode) |
+
+**Why split?** `/build:phase` etc. dispatch parallel subagents (`judge`, `reviewer`, `architect`) and rely on PreToolUse hooks — features only Claude Code has. Bundled skills (SDD, kaizen, etc.) are just markdown and work in any agent that supports the `skills/` convention.
 
 ## Getting started
 
